@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Detection Debug Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      video {
+        max-width: 100%;
+        margin: 20px 0;
+      }
+      .test-section {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
+      h2 {
+        color: #333;
+        border-bottom: 2px solid #007cba;
+        padding-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Video Detection Debug Test Page</h1>
+    <p>
+      This page contains various types of video elements to test the Video
+      Downloader extension.
+    </p>
+
+    <div class="test-section">
+      <h2>HTML5 Video with Direct Source</h2>
+      <video
+        controls
+        poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg"
+      >
+        <source
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          type="video/mp4"
+        />
+        <source
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.webm"
+          type="video/webm"
+        />
+        Your browser does not support the video tag.
+      </video>
+      <p>
+        This should be detected as an HTML5 video with multiple source options.
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h2>HTML5 Video with src attribute</h2>
+      <video
+        controls
+        src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+        poster="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ElephantsDream.jpg"
+      ></video>
+      <p>
+        This should be detected as an HTML5 video with direct src attribute.
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h2>YouTube Embed</h2>
+      <iframe
+        width="560"
+        height="315"
+        src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+      <p>This should be detected as a YouTube embedded video.</p>
+    </div>
+
+    <div class="test-section">
+      <h2>Vimeo Embed</h2>
+      <iframe
+        src="https://player.vimeo.com/video/76979871"
+        width="640"
+        height="360"
+        frameborder="0"
+        allowfullscreen
+      ></iframe>
+      <p>This should be detected as a Vimeo embedded video.</p>
+    </div>
+
+    <div class="test-section">
+      <h2>Dynamic Video (Added by JavaScript)</h2>
+      <div id="dynamic-video-container">
+        <button onclick="addDynamicVideo()">Add Dynamic Video</button>
+      </div>
+      <p>
+        Click the button to add a video element dynamically. This tests the
+        mutation observer.
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h2>Debug Extension</h2>
+      <button onclick="debugExtension()">Debug Extension Storage</button>
+      <button onclick="triggerScan()">Trigger Manual Scan</button>
+      <div
+        id="debug-output"
+        style="
+          margin-top: 10px;
+          padding: 10px;
+          background: #f5f5f5;
+          border-radius: 5px;
+          font-family: monospace;
+          white-space: pre-wrap;
+        "
+      ></div>
+      <p>
+        Use these buttons to debug the extension's video detection and storage.
+      </p>
+    </div>
+
+    <script>
+      function addDynamicVideo() {
+        const container = document.getElementById("dynamic-video-container");
+        const video = document.createElement("video");
+        video.controls = true;
+        video.src =
+          "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+        video.poster =
+          "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerBlazes.jpg";
+        video.style.maxWidth = "100%";
+        container.appendChild(video);
+
+        // Disable the button
+        const button = container.querySelector("button");
+        button.disabled = true;
+        button.textContent = "Dynamic Video Added";
+      }
+
+      // Test console logging
+      console.log("Debug test page loaded");
+      console.log(
+        "Video elements on page:",
+        document.querySelectorAll("video").length
+      );
+      console.log(
+        "iframe elements on page:",
+        document.querySelectorAll("iframe").length
+      );
+
+      // Debug functions for extension testing
+      async function debugExtension() {
+        const output = document.getElementById("debug-output");
+        output.textContent = "Checking extension storage...\n";
+
+        try {
+          // Check if chrome extension APIs are available
+          if (typeof chrome !== "undefined" && chrome.storage) {
+            // Get current tab info (if available)
+            const tabId = Date.now() % 100000; // Fallback tab ID
+
+            // Check for stored videos
+            chrome.storage.local.get(null, (result) => {
+              output.textContent +=
+                "Storage contents:\n" +
+                JSON.stringify(result, null, 2) +
+                "\n\n";
+
+              // Look for video keys
+              const videoKeys = Object.keys(result).filter((key) =>
+                key.startsWith("videos_")
+              );
+              output.textContent += `Found ${videoKeys.length} video storage keys:\n`;
+              videoKeys.forEach((key) => {
+                output.textContent += `  ${key}: ${result[key].length} videos\n`;
+              });
+            });
+          } else {
+            output.textContent += "Chrome extension APIs not available\n";
+          }
+        } catch (error) {
+          output.textContent += "Error: " + error.message + "\n";
+        }
+      }
+
+      async function triggerScan() {
+        const output = document.getElementById("debug-output");
+        output.textContent = "Triggering manual scan...\n";
+
+        try {
+          if (typeof chrome !== "undefined" && chrome.runtime) {
+            // Try to trigger a manual scan
+            chrome.runtime.sendMessage(
+              {
+                action: "scanVideos",
+              },
+              (response) => {
+                output.textContent +=
+                  "Scan response: " + JSON.stringify(response, null, 2) + "\n";
+              }
+            );
+          } else {
+            output.textContent += "Chrome extension APIs not available\n";
+          }
+        } catch (error) {
+          output.textContent += "Error: " + error.message + "\n";
+        }
+      }
+    </script>
+  </body>
+</html>

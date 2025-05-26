@@ -9,6 +9,7 @@ class VideoDownloaderSidePanel {
   }
 
   init() {
+    console.log("Initializing Video Downloader Side Panel");
     this.bindEvents();
     this.setupMessageListener();
     this.getCurrentTab();
@@ -24,6 +25,11 @@ class VideoDownloaderSidePanel {
     // Clear videos button
     document.getElementById("clearBtn").addEventListener("click", () => {
       this.clearVideos();
+    });
+
+    // Debug button
+    document.getElementById("debugBtn").addEventListener("click", () => {
+      this.showDebugInfo();
     });
   }
 
@@ -69,10 +75,13 @@ class VideoDownloaderSidePanel {
 
     if (this.currentTabId) {
       try {
+        console.log(`Loading videos for tab ${this.currentTabId}`);
         const result = await chrome.storage.local.get([
           `videos_${this.currentTabId}`,
         ]);
         const videos = result[`videos_${this.currentTabId}`] || [];
+        console.log(`Loaded ${videos.length} videos from storage:`, videos);
+
         this.videos = videos;
         this.renderVideos();
         this.updateStatus("ready", `${videos.length} videos found`);
@@ -80,6 +89,9 @@ class VideoDownloaderSidePanel {
         console.error("Error loading videos:", error);
         this.updateStatus("error", "Failed to load videos");
       }
+    } else {
+      console.error("No current tab ID available");
+      this.updateStatus("error", "No active tab found");
     }
   }
 
@@ -103,11 +115,14 @@ class VideoDownloaderSidePanel {
         tabId: this.currentTabId,
       });
 
+      console.log("Trigger rescan response:", response);
+
       if (response?.success) {
-        // Videos will be updated via message listener
-        setTimeout(() => {
-          this.loadVideosForCurrentTab();
-        }, 1000);
+        // Wait a bit for the scan to complete and then reload videos
+        setTimeout(async () => {
+          await this.loadVideosForCurrentTab();
+          this.showScanningIndicator(false);
+        }, 2000);
       } else {
         this.updateStatus("error", "Failed to trigger video scan");
         this.showScanningIndicator(false);
@@ -453,6 +468,53 @@ class VideoDownloaderSidePanel {
       if (this.videos.length === 0) {
         emptyState.style.display = "block";
       }
+    }
+  }
+
+  async showDebugInfo() {
+    console.log("=== DEBUG INFO ===");
+
+    // Show current tab info
+    console.log("Current tab ID:", this.currentTabId);
+
+    // Show all storage contents
+    try {
+      const allStorage = await chrome.storage.local.get(null);
+      console.log("Storage contents:", allStorage);
+
+      // Look for video-related keys
+      const videoKeys = Object.keys(allStorage).filter(
+        (key) => key.startsWith("videos_") || key.startsWith("detected_videos_")
+      );
+      console.log("Video storage keys:", videoKeys);
+
+      // Show specific tab videos
+      if (this.currentTabId) {
+        const tabVideoKey = `videos_${this.currentTabId}`;
+        const detectedVideoKey = `detected_videos_${this.currentTabId}`;
+
+        console.log(
+          `Videos for tab ${this.currentTabId}:`,
+          allStorage[tabVideoKey] || []
+        );
+        console.log(
+          `Detected videos for tab ${this.currentTabId}:`,
+          allStorage[detectedVideoKey] || []
+        );
+      }
+
+      // Show debug alert with summary
+      const debugInfo = {
+        currentTabId: this.currentTabId,
+        videosInMemory: this.videos.length,
+        storageKeys: videoKeys.length,
+        totalStorageItems: Object.keys(allStorage).length,
+      };
+
+      alert(`Debug Info:\n${JSON.stringify(debugInfo, null, 2)}`);
+    } catch (error) {
+      console.error("Debug error:", error);
+      alert("Debug error: " + error.message);
     }
   }
 }

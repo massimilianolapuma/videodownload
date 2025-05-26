@@ -74,28 +74,58 @@ class VideoDownloaderBackground {
 
   async triggerVideoScan(tabId) {
     try {
+      console.log(`Triggering video scan for tab ${tabId}`);
+
+      // First, ensure content script is injected
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          files: ["content.js"],
+        });
+        console.log("Content script injected successfully");
+      } catch (injectionError) {
+        console.log(
+          "Content script already injected or injection failed:",
+          injectionError.message
+        );
+      }
+
+      // Wait a bit for content script to initialize
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Send message to content script to scan for videos
       const response = await chrome.tabs.sendMessage(tabId, {
         action: "scanVideos",
       });
 
+      console.log("Video scan response:", response);
+
       if (response?.videos) {
-        // Store videos and notify side panel
+        // Store videos
         await chrome.storage.local.set({
           [`videos_${tabId}`]: response.videos,
         });
+        console.log(`Stored ${response.videos.length} videos for tab ${tabId}`);
 
-        // Broadcast to side panel
-        this.broadcastMessage({
-          action: "videosUpdated",
-          data: {
-            tabId: tabId,
-            videos: response.videos,
-          },
+        // Notify side panel directly (no broadcast needed for side panels)
+        // Side panel will reload videos when it receives the triggerVideoScan response
+      } else {
+        console.log("No videos found in scan response");
+        // Store empty array to clear any existing videos
+        await chrome.storage.local.set({
+          [`videos_${tabId}`]: [],
         });
       }
     } catch (error) {
       console.error("Error triggering video scan:", error);
+      // Store empty array on error
+      try {
+        await chrome.storage.local.set({
+          [`videos_${tabId}`]: [],
+        });
+      } catch (storageError) {
+        console.error("Error storing empty videos array:", storageError);
+      }
     }
   }
 

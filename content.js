@@ -7,8 +7,11 @@ class VideoDownloaderContent {
   }
 
   init() {
+    console.log("🎬 Video Downloader Content Script initializing...");
+
     // Listen for messages from popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      console.log("📨 Content script received message:", request);
       this.handleMessage(request, sender, sendResponse);
       return true; // Keep the message channel open for async responses
     });
@@ -24,6 +27,8 @@ class VideoDownloaderContent {
 
     // Set up mutation observer to detect dynamically loaded videos
     this.setupMutationObserver();
+
+    console.log("🎬 Video Downloader Content Script initialized");
   }
 
   setupMutationObserver() {
@@ -97,21 +102,29 @@ class VideoDownloaderContent {
 
   async scanForVideos() {
     this.videos = [];
+    console.log("Starting video scan...");
 
     try {
       // Scan for HTML5 video elements
+      console.log("Scanning for HTML5 video elements...");
       await this.scanVideoElements();
+      console.log(`Found ${this.videos.length} HTML5 videos`);
 
       // Scan for embedded videos (YouTube, Vimeo, etc.)
+      console.log("Scanning for embedded videos...");
       await this.scanEmbeddedVideos();
+      console.log(`Total after embedded scan: ${this.videos.length} videos`);
 
       // Scan for video sources in scripts and attributes
+      console.log("Scanning for video sources in scripts...");
       await this.scanVideoSources();
+      console.log(`Total after script scan: ${this.videos.length} videos`);
 
       // Get detected videos from background script
+      console.log("Getting detected videos from background...");
       await this.getDetectedVideos();
+      console.log(`Final total: ${this.videos.length} videos`);
 
-      console.log(`Found ${this.videos.length} videos`);
       return this.videos;
     } catch (error) {
       console.error("Error scanning for videos:", error);
@@ -121,11 +134,24 @@ class VideoDownloaderContent {
 
   async scanVideoElements() {
     const videoElements = document.querySelectorAll("video");
+    console.log(`Found ${videoElements.length} video elements in DOM`);
 
     videoElements.forEach((video, index) => {
+      console.log(`Processing video element ${index + 1}:`, {
+        src: video.src,
+        currentSrc: video.currentSrc,
+        poster: video.poster,
+        tagName: video.tagName,
+      });
+
       const videoData = this.extractVideoData(video, index);
+      console.log(`Extracted video data:`, videoData);
+
       if (videoData.url && this.isValidVideoUrl(videoData.url)) {
         this.videos.push(videoData);
+        console.log(`Added video ${index + 1} to collection`);
+      } else {
+        console.log(`Rejected video ${index + 1}: invalid URL or no URL`);
       }
     });
   }
@@ -1182,7 +1208,9 @@ class VideoDownloaderContent {
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     window.videoDownloaderContent = new VideoDownloaderContent();
+    console.log("🎬 Video Downloader content script initialized (DOM ready)");
   });
 } else {
   window.videoDownloaderContent = new VideoDownloaderContent();
+  console.log("🎬 Video Downloader content script initialized (immediate)");
 }
