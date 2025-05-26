@@ -1,0 +1,34 @@
+{
+    "name": "video-downloader-extension",
+    "version": "1.0.0",
+    "description": "Chrome extension for downloading videos from web pages",
+    "scripts": {
+        "build": "echo 'Building extension...' && npm run validate",
+        "validate": "echo 'Validating manifest...' && node -e \"console.log('Manifest validation:', JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).manifest_version === 3 ? 'OK' : 'FAILED')\"",
+        "health-check": "node health-check.js",
+        "package": "bash package-extension.sh",
+        "zip": "zip -r video-downloader-extension.zip . -x node_modules/\\* .git/\\* *.zip",
+        "dev": "echo 'Development mode: Load unpacked extension in chrome://extensions/'",
+        "test": "echo 'Run manual tests by loading extension in Chrome'"
+    },
+    "keywords": [
+        "chrome-extension",
+        "video-downloader",
+        "manifest-v3",
+        "video-detection"
+    ],
+    "author": "Video Downloader Team",
+    "license": "MIT",
+    "devDependencies": {},
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "local"
+    },
+    "chrome": {
+        "manifest_version": 3,
+        "minimum_chrome_version": "88"
+    }
+}

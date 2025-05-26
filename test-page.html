@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Downloader Extension Test Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+
+      .test-section {
+        background: white;
+        margin: 20px 0;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .test-section h2 {
+        color: #333;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+      }
+
+      video {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+      }
+
+      .video-item {
+        text-align: center;
+      }
+
+      .video-item h3 {
+        margin: 10px 0;
+        color: #555;
+      }
+
+      .instructions {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 4px solid #2196f3;
+      }
+
+      .test-info {
+        background: #fff3cd;
+        padding: 10px;
+        border-radius: 4px;
+        border-left: 4px solid #ffc107;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+
+      iframe {
+        max-width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .blob-demo {
+        margin: 20px 0;
+      }
+
+      #blobVideo {
+        display: none;
+      }
+
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+
+      button:hover {
+        background: #0056b3;
+      }
+
+      .status {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 4px;
+      }
+
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎬 Video Downloader Extension Test Page</h1>
+
+    <div class="instructions">
+      <h3>📝 How to Test:</h3>
+      <ol>
+        <li>
+          Make sure the Video Downloader extension is installed and enabled
+        </li>
+        <li>Click the extension icon in your Chrome toolbar</li>
+        <li>Click "Scan for Videos" to detect videos on this page</li>
+        <li>Try downloading different types of videos below</li>
+        <li>Check browser console (F12) for detailed logs</li>
+      </ol>
+    </div>
+
+    <div class="test-section">
+      <h2>🎥 Regular HTML5 Videos</h2>
+      <div class="test-info">
+        <strong>Expected behavior:</strong> These should be detected and
+        downloadable using direct download method.
+      </div>
+
+      <div class="video-grid">
+        <div class="video-item">
+          <h3>MP4 Video (Short)</h3>
+          <video controls width="300">
+            <source
+              src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
+              type="video/mp4"
+            />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="video-item">
+          <h3>WebM Video</h3>
+          <video controls width="300">
+            <source
+              src="https://file-examples.com/storage/fe86dcefaec6ba86e40e28e/2017/10/file_example_WEBM_480_900KB.webm"
+              type="video/webm"
+            />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🔒 Protected/Blob URL Videos</h2>
+      <div class="test-info">
+        <strong>Expected behavior:</strong> These will use blob URLs and should
+        trigger alternative download methods including stream recording.
+      </div>
+
+      <div class="blob-demo">
+        <button onclick="createBlobVideo()">
+          Create Blob Video (5 second test)
+        </button>
+        <button onclick="createLongBlobVideo()">
+          Create Long Blob Video (30 seconds)
+        </button>
+        <div id="blobStatus" class="status" style="display: none"></div>
+        <video id="blobVideo" controls width="400" style="margin-top: 10px">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>📺 Embedded Videos</h2>
+      <div class="test-info">
+        <strong>Expected behavior:</strong> These should be detected as
+        YouTube/Vimeo embeds (requires special handling).
+      </div>
+
+      <div class="video-grid">
+        <div class="video-item">
+          <h3>YouTube Embed</h3>
+          <iframe
+            width="300"
+            height="200"
+            src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+            frameborder="0"
+            allowfullscreen
+          >
+          </iframe>
+        </div>
+
+        <div class="video-item">
+          <h3>Vimeo Embed</h3>
+          <iframe
+            width="300"
+            height="200"
+            src="https://player.vimeo.com/video/148751763"
+            frameborder="0"
+            allowfullscreen
+          >
+          </iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🔧 Test Results</h2>
+      <div id="testResults">
+        <p>
+          Use the extension to scan and download videos. Results will help
+          verify:
+        </p>
+        <ul>
+          <li>✅ Video detection accuracy</li>
+          <li>✅ Download method selection (direct vs. alternative)</li>
+          <li>✅ Progress feedback and status updates</li>
+          <li>✅ Full video length recording (not just 30 seconds)</li>
+          <li>✅ Error handling for unsupported videos</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // Create a test blob video from canvas
+      function createBlobVideo(duration = 5) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 640;
+        canvas.height = 480;
+
+        const stream = canvas.captureStream(30); // 30 FPS
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: "video/webm" });
+          const videoURL = URL.createObjectURL(blob);
+
+          const video = document.getElementById("blobVideo");
+          video.src = videoURL;
+          video.style.display = "block";
+          video.title = `Test Blob Video (${duration}s)`;
+
+          showStatus(
+            `Blob video created! Duration: ${duration} seconds. This should test stream recording.`,
+            "success"
+          );
+        };
+
+        // Animate the canvas
+        let frame = 0;
+        const animate = () => {
+          ctx.fillStyle = `hsl(${frame % 360}, 70%, 50%)`;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.fillStyle = "white";
+          ctx.font = "48px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(`Frame ${frame}`, canvas.width / 2, canvas.height / 2);
+          ctx.fillText(
+            `${duration}s Test`,
+            canvas.width / 2,
+            canvas.height / 2 + 60
+          );
+
+          frame++;
+
+          if (frame < duration * 30) {
+            // 30 FPS for specified duration
+            requestAnimationFrame(animate);
+          }
+        };
+
+        showStatus("Creating blob video...", "info");
+        mediaRecorder.start();
+        animate();
+
+        setTimeout(() => {
+          mediaRecorder.stop();
+          stream.getTracks().forEach((track) => track.stop());
+        }, duration * 1000);
+      }
+
+      function createLongBlobVideo() {
+        createBlobVideo(30); // 30 second video to test full length recording
+      }
+
+      function showStatus(message, type) {
+        const status = document.getElementById("blobStatus");
+        status.textContent = message;
+        status.className = `status ${type}`;
+        status.style.display = "block";
+      }
+
+      // Log page load for extension detection
+      console.log("Video Downloader Test Page loaded");
+      console.log("Videos should be detectable by the extension");
+    </script>
+  </body>
+</html>

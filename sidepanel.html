@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Downloader - Downloads</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: #f8f9fa;
+        min-height: 100vh;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 20px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.2s;
+      }
+
+      .btn:hover {
+        background: #0056b3;
+      }
+
+      .btn.danger {
+        background: #dc3545;
+      }
+
+      .btn.danger:hover {
+        background: #c82333;
+      }
+
+      .btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .download-item {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .download-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+
+      .download-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+        line-height: 1.4;
+        max-width: 70%;
+      }
+
+      .download-status {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .status-downloading {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .status-paused {
+        background: #fff3e0;
+        color: #f57c00;
+      }
+
+      .status-completed {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+
+      .status-error {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .download-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .progress-container {
+        margin-bottom: 12px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #007bff, #0056b3);
+        transition: width 0.3s ease;
+        border-radius: 3px;
+      }
+
+      .progress-text {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 4px;
+        font-size: 11px;
+        color: #666;
+      }
+
+      .download-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .btn-small {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+      }
+
+      .empty-state h3 {
+        margin: 0 0 8px 0;
+        color: #333;
+      }
+
+      .error-details {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+        border-radius: 4px;
+        padding: 8px;
+        margin-top: 8px;
+        font-size: 11px;
+        color: #c62828;
+      }
+
+      .download-url {
+        font-size: 11px;
+        color: #666;
+        word-break: break-all;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>📥 Downloads</h1>
+      <div class="controls">
+        <button id="clearCompletedBtn" class="btn btn-small">
+          Clear Completed
+        </button>
+        <button id="clearAllBtn" class="btn danger btn-small">Clear All</button>
+      </div>
+    </div>
+
+    <div id="downloadsList">
+      <div class="empty-state">
+        <h3>No downloads yet</h3>
+        <p>
+          Start downloading videos from any webpage using the extension icon.
+        </p>
+      </div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
