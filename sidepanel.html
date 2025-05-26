@@ -356,6 +356,29 @@
         color: #666;
       }
 
+      .debug-panel {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 16px;
+        font-family: monospace;
+        font-size: 11px;
+        display: none;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .debug-panel.show {
+        display: block;
+      }
+
+      .debug-panel pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
       .spinner {
         width: 20px;
         height: 20px;
@@ -387,10 +410,16 @@
     <div class="controls">
       <button class="btn" id="rescanBtn">🔄 Rescan</button>
       <button class="btn secondary" id="clearBtn">🗑️ Clear</button>
-      <button class="btn secondary" id="debugBtn">🐛 Debug</button>
+      <button class="btn secondary" id="debugBtn">🔍 Debug</button>
     </div>
 
     <div class="status" id="statusMessage"></div>
+
+    <div class="debug-panel" id="debugPanel">
+      <pre id="debugContent">
+Click Debug button to view storage contents...</pre
+      >
+    </div>
 
     <div class="video-count" id="videoCount" style="display: none">
       No videos detected

@@ -29,7 +29,7 @@ class VideoDownloaderSidePanel {
 
     // Debug button
     document.getElementById("debugBtn").addEventListener("click", () => {
-      this.showDebugInfo();
+      this.toggleDebugPanel();
     });
   }
 
@@ -471,51 +471,65 @@ class VideoDownloaderSidePanel {
     }
   }
 
-  async showDebugInfo() {
-    console.log("=== DEBUG INFO ===");
+  async toggleDebugPanel() {
+    const debugPanel = document.getElementById("debugPanel");
+    const debugContent = document.getElementById("debugContent");
 
-    // Show current tab info
-    console.log("Current tab ID:", this.currentTabId);
+    if (debugPanel.classList.contains("show")) {
+      debugPanel.classList.remove("show");
+    } else {
+      debugPanel.classList.add("show");
+      await this.updateDebugInfo();
+    }
+  }
 
-    // Show all storage contents
+  async updateDebugInfo() {
+    const debugContent = document.getElementById("debugContent");
+    let debugInfo = "=== DEBUG INFO ===\n\n";
+
     try {
+      // Current tab info
+      debugInfo += `Current Tab ID: ${this.currentTabId || "Not set"}\n\n`;
+
+      // Storage contents
+      debugInfo += "=== STORAGE CONTENTS ===\n";
       const allStorage = await chrome.storage.local.get(null);
-      console.log("Storage contents:", allStorage);
 
-      // Look for video-related keys
-      const videoKeys = Object.keys(allStorage).filter(
-        (key) => key.startsWith("videos_") || key.startsWith("detected_videos_")
-      );
-      console.log("Video storage keys:", videoKeys);
-
-      // Show specific tab videos
-      if (this.currentTabId) {
-        const tabVideoKey = `videos_${this.currentTabId}`;
-        const detectedVideoKey = `detected_videos_${this.currentTabId}`;
-
-        console.log(
-          `Videos for tab ${this.currentTabId}:`,
-          allStorage[tabVideoKey] || []
-        );
-        console.log(
-          `Detected videos for tab ${this.currentTabId}:`,
-          allStorage[detectedVideoKey] || []
-        );
+      if (Object.keys(allStorage).length === 0) {
+        debugInfo += "Storage is empty\n\n";
+      } else {
+        for (const [key, value] of Object.entries(allStorage)) {
+          if (key.startsWith("videos_")) {
+            debugInfo += `${key}: ${
+              Array.isArray(value) ? value.length : "Unknown"
+            } videos\n`;
+            if (Array.isArray(value) && value.length > 0) {
+              value.forEach((video, i) => {
+                debugInfo += `  ${i + 1}. ${
+                  video.title || video.url || "Unknown"
+                }\n`;
+              });
+            }
+          } else {
+            debugInfo += `${key}: ${typeof value} (${JSON.stringify(
+              value
+            ).substring(0, 50)}...)\n`;
+          }
+        }
       }
 
-      // Show debug alert with summary
-      const debugInfo = {
-        currentTabId: this.currentTabId,
-        videosInMemory: this.videos.length,
-        storageKeys: videoKeys.length,
-        totalStorageItems: Object.keys(allStorage).length,
-      };
-
-      alert(`Debug Info:\n${JSON.stringify(debugInfo, null, 2)}`);
+      debugInfo += "\n=== CURRENT VIDEOS ===\n";
+      debugInfo += `Loaded videos count: ${this.videos.length}\n`;
+      this.videos.forEach((video, i) => {
+        debugInfo += `${i + 1}. ${video.title || "No title"} - ${
+          video.url || "No URL"
+        }\n`;
+      });
     } catch (error) {
-      console.error("Debug error:", error);
-      alert("Debug error: " + error.message);
+      debugInfo += `Error getting debug info: ${error.message}\n`;
     }
+
+    debugContent.textContent = debugInfo;
   }
 }
 

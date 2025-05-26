@@ -7,11 +7,8 @@ class VideoDownloaderContent {
   }
 
   init() {
-    console.log("🎬 Video Downloader Content Script initializing...");
-
     // Listen for messages from popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      console.log("📨 Content script received message:", request);
       this.handleMessage(request, sender, sendResponse);
       return true; // Keep the message channel open for async responses
     });
@@ -27,8 +24,6 @@ class VideoDownloaderContent {
 
     // Set up mutation observer to detect dynamically loaded videos
     this.setupMutationObserver();
-
-    console.log("🎬 Video Downloader Content Script initialized");
   }
 
   setupMutationObserver() {
@@ -1208,9 +1203,7 @@ class VideoDownloaderContent {
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     window.videoDownloaderContent = new VideoDownloaderContent();
-    console.log("🎬 Video Downloader content script initialized (DOM ready)");
   });
 } else {
   window.videoDownloaderContent = new VideoDownloaderContent();
-  console.log("🎬 Video Downloader content script initialized (immediate)");
 }
