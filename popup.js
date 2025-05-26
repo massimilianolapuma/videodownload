@@ -14,6 +14,12 @@ class VideoDownloaderPopup {
     document.getElementById("refreshBtn").addEventListener("click", () => {
       this.scanForVideos();
     });
+
+    document
+      .getElementById("openSidePanelBtn")
+      .addEventListener("click", () => {
+        this.openSidePanel();
+      });
   }
 
   async loadVideos() {
@@ -493,6 +499,24 @@ class VideoDownloaderPopup {
     }, 3000);
 
     return monitor;
+  }
+
+  async openSidePanel() {
+    try {
+      // Ask background script to open the side panel
+      const response = await chrome.runtime.sendMessage({
+        action: "openSidePanel",
+      });
+
+      if (response?.success) {
+        this.showStatus("Download Manager opened!", "success");
+      } else {
+        this.showStatus("Side panel opened for download management", "info");
+      }
+    } catch (error) {
+      console.error("Error opening side panel:", error);
+      this.showStatus("Could not open Download Manager", "error");
+    }
   }
 }
 

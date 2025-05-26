@@ -99,7 +99,7 @@ class VideoDownloaderSidePanel {
         action: "getDownloadProgress",
       });
 
-      if (response && response.downloads) {
+      if (response?.downloads) {
         // Update progress for active downloads
         for (const [downloadId, progressData] of Object.entries(
           response.downloads
@@ -207,7 +207,7 @@ class VideoDownloaderSidePanel {
       activeSection.className = "downloads-section";
       activeSection.innerHTML = "<h3>Active Downloads</h3>";
 
-      for (const [id, download] of this.downloads) {
+      for (const [, download] of this.downloads) {
         activeSection.appendChild(this.createDownloadItem(download, true));
       }
 
@@ -220,7 +220,7 @@ class VideoDownloaderSidePanel {
       completedSection.className = "downloads-section";
       completedSection.innerHTML = "<h3>Completed Downloads</h3>";
 
-      for (const [id, download] of this.completedDownloads) {
+      for (const [, download] of this.completedDownloads) {
         completedSection.appendChild(this.createDownloadItem(download, false));
       }
 
@@ -390,7 +390,7 @@ class VideoDownloaderSidePanel {
         downloadId: downloadId,
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         const download = this.downloads.get(downloadId);
         if (download) {
           download.status = "paused";
@@ -411,7 +411,7 @@ class VideoDownloaderSidePanel {
         downloadId: downloadId,
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         const download = this.downloads.get(downloadId);
         if (download) {
           download.status = "downloading";
@@ -432,7 +432,7 @@ class VideoDownloaderSidePanel {
         downloadId: downloadId,
       });
 
-      if (response && response.success) {
+      if (response?.success) {
         this.downloads.delete(downloadId);
         this.updateUI();
         this.saveDownloadState();

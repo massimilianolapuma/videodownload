@@ -49,8 +49,30 @@ class VideoDownloaderBackground {
   }
 
   setupSidePanel() {
-    // Enable side panel for all tabs
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+    // Side panel will be opened programmatically when downloads are active
+    // Don't force it to open on action click - let popup be the default
+    console.log(
+      "Side panel setup complete - will open programmatically when needed"
+    );
+  }
+
+  async openSidePanel() {
+    try {
+      // Get current active tab
+      const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (tabs.length > 0) {
+        const tabId = tabs[0].id;
+        // Open side panel for this tab
+        await chrome.sidePanel.open({ tabId });
+        console.log("Side panel opened for download tracking");
+      }
+    } catch (error) {
+      console.error("Error opening side panel:", error);
+      // Side panel might not be available or already open, continue silently
+    }
   }
 
   async restoreActiveDownloads() {
@@ -82,7 +104,14 @@ class VideoDownloaderBackground {
               });
             }
           } catch (error) {
-            console.log("Download no longer active:", downloadId);
+            // Download is no longer active, remove from tracking
+            console.log(
+              "Download no longer active:",
+              downloadId,
+              error.message
+            );
+            // Clean up any stored data for this download
+            chrome.storage.local.remove([`download_${downloadId}`]);
           }
         }
       }
@@ -223,6 +252,12 @@ class VideoDownloaderBackground {
         case "cancelDownload": {
           const result = await this.cancelDownload(request.downloadId);
           sendResponse({ success: result });
+          break;
+        }
+
+        case "openSidePanel": {
+          await this.openSidePanel();
+          sendResponse({ success: true });
           break;
         }
 
@@ -482,6 +517,9 @@ class VideoDownloaderBackground {
 
       // Save state
       await this.saveDownloadState();
+
+      // Open side panel when download starts so user can track progress
+      await this.openSidePanel();
 
       console.log("Download started with ID:", chromeDownloadId);
       return { success: true, downloadId: chromeDownloadId };
