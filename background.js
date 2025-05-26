@@ -44,16 +44,59 @@ class VideoDownloaderBackground {
     // Setup side panel
     this.setupSidePanel();
 
+    // Setup action click listener
+    chrome.action.onClicked.addListener((tab) => {
+      this.handleActionClick(tab);
+    });
+
     // Restore active downloads on startup
     this.restoreActiveDownloads();
   }
 
   setupSidePanel() {
-    // Side panel will be opened programmatically when downloads are active
-    // Don't force it to open on action click - let popup be the default
-    console.log(
-      "Side panel setup complete - will open programmatically when needed"
-    );
+    // Configure side panel to open on action click
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+    console.log("Side panel configured to open on extension icon click");
+  }
+
+  async handleActionClick(tab) {
+    try {
+      // Trigger video scan when side panel is opened
+      await this.triggerVideoScan(tab.id);
+      console.log(
+        "Extension icon clicked, triggering video scan for tab:",
+        tab.id
+      );
+    } catch (error) {
+      console.error("Error handling action click:", error);
+    }
+  }
+
+  async triggerVideoScan(tabId) {
+    try {
+      // Send message to content script to scan for videos
+      const response = await chrome.tabs.sendMessage(tabId, {
+        action: "scanVideos",
+      });
+
+      if (response?.videos) {
+        // Store videos and notify side panel
+        await chrome.storage.local.set({
+          [`videos_${tabId}`]: response.videos,
+        });
+
+        // Broadcast to side panel
+        this.broadcastMessage({
+          action: "videosUpdated",
+          data: {
+            tabId: tabId,
+            videos: response.videos,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error triggering video scan:", error);
+    }
   }
 
   async openSidePanel() {
@@ -284,6 +327,12 @@ class VideoDownloaderBackground {
           console.log(
             `Auto-detected ${request.count} videos on tab ${request.tabId}`
           );
+          sendResponse({ success: true });
+          break;
+        }
+
+        case "triggerVideoScan": {
+          await this.triggerVideoScan(request.tabId);
           sendResponse({ success: true });
           break;
         }
