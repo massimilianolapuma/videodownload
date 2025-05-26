@@ -7,7 +7,7 @@ class VideoDownloaderPopup {
 
   init() {
     this.bindEvents();
-    this.loadVideos();
+    this.autoScanAndLoad();
   }
 
   bindEvents() {
@@ -78,6 +78,29 @@ class VideoDownloaderPopup {
     }
   }
 
+  async autoScanAndLoad() {
+    try {
+      // First try to load existing videos from storage
+      await this.loadVideos();
+
+      // Check if we found any videos in storage
+      if (this.videos && this.videos.length > 0) {
+        this.showStatus(
+          `Found ${this.videos.length} video(s) from previous scan`,
+          "success"
+        );
+        return;
+      }
+
+      // If no videos in storage, automatically scan the page
+      this.showStatus("Auto-scanning page for videos...", "info");
+      await this.scanForVideos();
+    } catch (error) {
+      console.error("Error in auto scan and load:", error);
+      this.showStatus("Error loading videos. Try manual scan.", "error");
+    }
+  }
+
   displayVideos(videos) {
     const videoList = document.getElementById("videoList");
 
@@ -145,9 +168,14 @@ class VideoDownloaderPopup {
 
         button.textContent = "✅ Downloaded";
         this.showStatus(
-          "Download started! Check your Downloads folder.",
+          "Download started! Opening Download Manager...",
           "success"
         );
+
+        // Automatically open side panel for download tracking
+        setTimeout(() => {
+          this.openSidePanel();
+        }, 500);
       } catch (downloadError) {
         console.log(
           "Direct download failed, trying alternative method:",
@@ -503,19 +531,29 @@ class VideoDownloaderPopup {
 
   async openSidePanel() {
     try {
+      this.showStatus("Opening Download Manager...", "info");
+
       // Ask background script to open the side panel
       const response = await chrome.runtime.sendMessage({
         action: "openSidePanel",
       });
 
       if (response?.success) {
-        this.showStatus("Download Manager opened!", "success");
+        this.showStatus("Download Manager opened successfully!", "success");
+
+        // Close popup after short delay to let user see the side panel
+        setTimeout(() => {
+          window.close();
+        }, 1000);
       } else {
-        this.showStatus("Side panel opened for download management", "info");
+        this.showStatus("Unable to open Download Manager", "error");
       }
     } catch (error) {
       console.error("Error opening side panel:", error);
-      this.showStatus("Could not open Download Manager", "error");
+      this.showStatus(
+        "Error opening Download Manager. Please try again.",
+        "error"
+      );
     }
   }
 }

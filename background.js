@@ -67,11 +67,23 @@ class VideoDownloaderBackground {
         const tabId = tabs[0].id;
         // Open side panel for this tab
         await chrome.sidePanel.open({ tabId });
-        console.log("Side panel opened for download tracking");
+        console.log("Side panel opened successfully for tab:", tabId);
+        return true;
+      } else {
+        console.error("No active tab found");
+        return false;
       }
     } catch (error) {
       console.error("Error opening side panel:", error);
-      // Side panel might not be available or already open, continue silently
+      // Try alternative method - open without specifying tab
+      try {
+        await chrome.sidePanel.open({});
+        console.log("Side panel opened with fallback method");
+        return true;
+      } catch (fallbackError) {
+        console.error("Fallback side panel open failed:", fallbackError);
+        return false;
+      }
     }
   }
 
@@ -261,6 +273,21 @@ class VideoDownloaderBackground {
           break;
         }
 
+        case "getCurrentTabId": {
+          const tabId = sender.tab?.id || 0;
+          sendResponse({ tabId });
+          break;
+        }
+
+        case "videosDetected": {
+          // Handle notification when videos are auto-detected
+          console.log(
+            `Auto-detected ${request.count} videos on tab ${request.tabId}`
+          );
+          sendResponse({ success: true });
+          break;
+        }
+
         default:
           sendResponse({ error: "Unknown action" });
       }
@@ -275,6 +302,11 @@ class VideoDownloaderBackground {
     if (this.activeDownloads.has(downloadItem.id.toString())) {
       const download = this.activeDownloads.get(downloadItem.id.toString());
 
+      // Automatically open side panel for download tracking
+      this.openSidePanel().catch((err) => {
+        console.log("Side panel not available or already open:", err.message);
+      });
+
       // Notify side panel about download start
       this.broadcastMessage({
         action: "downloadStarted",
@@ -285,8 +317,12 @@ class VideoDownloaderBackground {
           url: downloadItem.url,
           total: downloadItem.totalBytes,
           pausable: downloadItem.canResume,
+          startTime: Date.now(),
         },
       });
+
+      // Persist download state for continuity
+      await this.saveDownloadState();
     }
   }
 

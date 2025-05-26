@@ -86,10 +86,10 @@ class VideoDownloaderSidePanel {
   }
 
   startProgressRefresh() {
-    // Refresh download progress every 2 seconds
+    // Refresh download progress every 1 second for smoother updates
     this.refreshInterval = setInterval(() => {
       this.refreshDownloadProgress();
-    }, 2000);
+    }, 1000);
   }
 
   async refreshDownloadProgress() {
@@ -100,17 +100,29 @@ class VideoDownloaderSidePanel {
       });
 
       if (response?.downloads) {
-        // Update progress for active downloads
+        let hasChanges = false;
+
+        // Update progress for active downloads only if values changed
         for (const [downloadId, progressData] of Object.entries(
           response.downloads
         )) {
           if (this.downloads.has(downloadId)) {
             const download = this.downloads.get(downloadId);
-            Object.assign(download, progressData);
-            this.downloads.set(downloadId, download);
+            const oldProgress = download.progress || 0;
+
+            // Only update if progress actually changed significantly
+            if (Math.abs((progressData.progress || 0) - oldProgress) > 0.5) {
+              Object.assign(download, progressData);
+              this.downloads.set(downloadId, download);
+              hasChanges = true;
+            }
           }
         }
-        this.updateUI();
+
+        // Only update UI if there were actual changes
+        if (hasChanges) {
+          this.updateUI();
+        }
       }
     } catch (error) {
       console.error("Error refreshing download progress:", error);

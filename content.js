@@ -16,10 +16,10 @@ class VideoDownloaderContent {
     // Auto-scan when page loads
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", () => {
-        setTimeout(() => this.scanForVideos(), 1000);
+        setTimeout(() => this.autoScanAndStore(), 1000);
       });
     } else {
-      setTimeout(() => this.scanForVideos(), 1000);
+      setTimeout(() => this.autoScanAndStore(), 1000);
     }
 
     // Set up mutation observer to detect dynamically loaded videos
@@ -46,7 +46,7 @@ class VideoDownloaderContent {
         // Debounce rescanning
         clearTimeout(this.rescanTimeout);
         this.rescanTimeout = setTimeout(() => {
-          this.scanForVideos();
+          this.autoScanAndStore();
         }, 2000);
       }
     });
@@ -795,6 +795,7 @@ class VideoDownloaderContent {
           audioBitsPerSecond: 128000,
         });
       } catch (error) {
+        console.log("Falling back to basic MediaRecorder:", error.message);
         mediaRecorder = new MediaRecorder(stream);
       }
     }
@@ -1125,6 +1126,55 @@ class VideoDownloaderContent {
     }
 
     return `${filename}_${timestamp}.${extension}`;
+  }
+
+  async autoScanAndStore() {
+    try {
+      // Perform the video scan
+      const videos = await this.scanForVideos();
+
+      // Store the videos for the current tab
+      if (videos && videos.length > 0) {
+        const tabId = await this.getCurrentTabId();
+        await chrome.storage.local.set({ [`videos_${tabId}`]: videos });
+
+        // Notify background script about found videos
+        chrome.runtime
+          .sendMessage({
+            action: "videosDetected",
+            tabId: tabId,
+            count: videos.length,
+          })
+          .catch((err) => {
+            // Ignore errors if popup/background isn't ready
+            console.log("Background script not ready:", err.message);
+          });
+
+        console.log(`Auto-detected and stored ${videos.length} videos`);
+      }
+
+      return videos;
+    } catch (error) {
+      console.error("Error in auto scan and store:", error);
+      return [];
+    }
+  }
+
+  async getCurrentTabId() {
+    // Get current tab ID through background script
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: "getCurrentTabId",
+      });
+      return response?.tabId || 0;
+    } catch (error) {
+      // Fallback: extract from URL or use timestamp when background script unavailable
+      console.log(
+        "Background script unavailable, using fallback tab ID:",
+        error.message
+      );
+      return Date.now() % 100000;
+    }
   }
 }
 
