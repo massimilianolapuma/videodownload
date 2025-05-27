@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
+const { sign } = require("crypto");
 
 // Get version increment type from command line
 const incrementType = process.argv[2] || "patch"; // major, minor, or patch
@@ -57,6 +58,8 @@ const filesToCopy = [
   "styles.css",
   "sidepanel.html",
   "sidepanel.js",
+  "sidepanel.css",
+  "video-item.css",
 ];
 
 // Directories to copy
