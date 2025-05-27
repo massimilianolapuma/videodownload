@@ -267,16 +267,11 @@ function createVideoElement(video, index) {
   const div = document.createElement("div");
   div.className = "video-item";
 
-  // Create video thumbnail or placeholder
-  const thumbnail =
-    video.thumbnail ||
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M8 5v14l11-7z'/%3E%3C/svg%3E";
+  // Create video preview with real thumbnail or capture frame
+  const previewHtml = createVideoPreview(video, index);
 
   div.innerHTML = `
-    <div class="video-preview">
-      <img src="${thumbnail}" alt="Video thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-      <div class="play-overlay" style="display: none;">▶</div>
-    </div>
+    ${previewHtml}
     <div class="video-info">
       <div class="video-title">${video.title || `Video ${index + 1}`}</div>
       <div class="video-meta">
@@ -298,6 +293,53 @@ function createVideoElement(video, index) {
   `;
 
   return div;
+}
+
+// Create video preview with real thumbnails when available
+function createVideoPreview(video, index) {
+  // Check if we have a poster image
+  if (video.poster && video.poster !== "null" && video.poster.trim() !== "") {
+    return `
+      <div class="video-preview">
+        <img src="${video.poster}" alt="Video thumbnail" 
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+        <div class="placeholder" style="display: none;">
+          <div class="play-overlay">▶</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // If we have access to the video element, try to capture a frame
+  if (video.element && video.element.videoWidth > 0) {
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = video.element.videoWidth;
+      canvas.height = video.element.videoHeight;
+
+      // Draw current frame
+      ctx.drawImage(video.element, 0, 0);
+      const frameDataURL = canvas.toDataURL("image/jpeg", 0.7);
+
+      return `
+        <div class="video-preview">
+          <img src="${frameDataURL}" alt="Video frame" style="object-fit: cover;">
+        </div>
+      `;
+    } catch (error) {
+      console.log(`Could not capture frame for video ${index + 1}:`, error);
+    }
+  }
+
+  // Fallback to placeholder with play button
+  return `
+    <div class="video-preview">
+      <div class="placeholder">
+        <div class="play-overlay">▶</div>
+      </div>
+    </div>
+  `;
 }
 
 // Display no videos message
@@ -643,29 +685,31 @@ function showStatusMessage(message, type = "info") {
   const statusDot = document.getElementById("statusDot");
   const statusText = document.getElementById("statusText");
 
-  if (statusElement) {
+  // Only show the full status message for non-scanning states
+  if (statusElement && type !== "scanning") {
     statusElement.textContent = message;
     statusElement.className = `status show ${type}`;
 
-    // Hide after 3 seconds unless it's scanning
-    if (type !== "scanning") {
-      setTimeout(() => {
-        statusElement.classList.remove("show");
-      }, 3000);
-    }
+    // Hide after 3 seconds
+    setTimeout(() => {
+      statusElement.classList.remove("show");
+    }, 3000);
+  } else if (statusElement && type === "scanning") {
+    // Hide the status message for scanning - we'll only use the dot
+    statusElement.classList.remove("show");
   }
 
-  // Update status indicator
+  // Update status indicator in header
   if (statusDot && statusText) {
-    statusText.textContent = message;
-    statusDot.style.backgroundColor =
-      type === "error"
-        ? "#dc3545"
-        : type === "success"
-        ? "#28a745"
-        : type === "scanning"
-        ? "#ffc107"
-        : "#28a745";
+    if (type === "scanning") {
+      statusText.textContent = "Scanning...";
+      statusDot.className = "status-dot scanning";
+    } else {
+      statusText.textContent = message;
+      statusDot.className = "status-dot";
+      statusDot.style.backgroundColor =
+        type === "error" ? "#dc3545" : "#28a745";
+    }
   }
 
   console.log(`Status: ${message} (${type})`);
