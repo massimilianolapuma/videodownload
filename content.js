@@ -25,11 +25,17 @@ class VideoDownloaderContent {
   }
 
   init() {
+    console.log("🔧 Initializing VideoDownloaderContent...");
+
     // Listen for messages from popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      console.log("📨 Received message:", request.action);
       this.handleMessage(request, sender, sendResponse);
       return true; // Keep the message channel open for async responses
     });
+
+    // Signal that content script is ready
+    console.log("✅ Content script initialized and ready");
 
     // Auto-scan when page loads with multiple attempts
     if (document.readyState === "loading") {

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Downloader - Connection Fix Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .video-container {
+        margin: 20px 0;
+        text-align: center;
+      }
+      video {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      .instructions {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid #ffeaa7;
+      }
+      .code {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🎬 Video Downloader Extension</h1>
+      <h2>Connection Fix Test Page</h2>
+      <p>
+        Test the improved connection handling between side panel and content
+        script
+      </p>
+    </div>
+
+    <div class="instructions">
+      <h3>📋 Testing Instructions:</h3>
+      <ol>
+        <li>
+          <strong>Install the Extension:</strong> Load the extension from the
+          <code>build/</code> folder
+        </li>
+        <li>
+          <strong>Open Side Panel:</strong> Click the Video Downloader extension
+          icon and select "Side Panel"
+        </li>
+        <li>
+          <strong>Test Connection:</strong> The side panel should connect to
+          this page automatically
+        </li>
+        <li>
+          <strong>Force Scan:</strong> Use the "Force Scan" button if no videos
+          appear initially
+        </li>
+        <li>
+          <strong>Download Test:</strong> Try downloading one of the test videos
+          below
+        </li>
+      </ol>
+      <div class="status info">
+        <strong>Expected Behavior:</strong> The side panel should successfully
+        connect to this page without showing "Could not establish connection"
+        errors.
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>📺 Test Videos</h3>
+
+      <div class="video-container">
+        <h4>Sample Video 1 - Big Buck Bunny (MP4)</h4>
+        <video controls width="400" height="225">
+          <source
+            src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
+            type="video/mp4"
+          />
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <p>
+          <em
+            >This should be detected as "Big Buck Bunny" or "Sample Video 1"</em
+          >
+        </p>
+      </div>
+
+      <div class="video-container">
+        <h4>Sample Video 2 - WebM Format</h4>
+        <video controls width="400" height="225">
+          <source
+            src="https://sample-videos.com/zip/10/webm/SampleVideo_1280x720_1mb.webm"
+            type="video/webm"
+          />
+          <source
+            src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <p><em>This should be detected as "Sample Video 2"</em></p>
+      </div>
+
+      <div class="video-container">
+        <h4>Sample Video 3 - Local Test</h4>
+        <video
+          controls
+          width="400"
+          height="225"
+          data-title="Connection Test Video"
+        >
+          <source
+            src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAr1tZGF0AAACmQYF//+Z3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE0OCByMjYwMSBhMGNkN2QzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNSAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcWQ9MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTYgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTEwIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAA"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <p><em>This should be detected as "Connection Test Video"</em></p>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🔍 Connection Status Monitoring</h3>
+      <div id="connection-status" class="status info">
+        <strong>Status:</strong> Waiting for extension connection...
+      </div>
+      <div class="code">
+        <strong>Page loaded at:</strong> <span id="load-time"></span><br />
+        <strong>Videos detected:</strong> <span id="video-count">0</span><br />
+        <strong>Extension connected:</strong>
+        <span id="extension-status">No</span>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>✅ Expected Results</h3>
+      <ul>
+        <li>
+          <strong>Connection Success:</strong> Side panel connects without
+          "Could not establish connection" errors
+        </li>
+        <li>
+          <strong>Video Detection:</strong> All 3 test videos should be detected
+          and listed
+        </li>
+        <li>
+          <strong>Retry Logic:</strong> If initial connection fails, retry
+          attempts should succeed
+        </li>
+        <li>
+          <strong>Download Ready:</strong> Download buttons should appear and be
+          functional
+        </li>
+        <li>
+          <strong>Error Handling:</strong> Clear error messages if something
+          goes wrong
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      // Update page load time
+      document.getElementById("load-time").textContent =
+        new Date().toLocaleTimeString();
+
+      // Count videos
+      const videos = document.querySelectorAll("video");
+      document.getElementById("video-count").textContent = videos.length;
+
+      // Log page info for debugging
+      console.log("🎬 Video Downloader Test Page Loaded");
+      console.log("📍 URL:", window.location.href);
+      console.log("📺 Videos found:", videos.length);
+
+      // Add titles to videos if they don't have them
+      videos.forEach((video, index) => {
+        if (!video.title) {
+          video.title = `Test Video ${index + 1}`;
+        }
+        console.log(`📺 Video ${index + 1}:`, {
+          title: video.title,
+          src: video.currentSrc || "No source loaded",
+          duration: video.duration || "Unknown",
+        });
+      });
+
+      // Listen for extension messages (if any)
+      if (typeof chrome !== "undefined" && chrome.runtime) {
+        try {
+          chrome.runtime.onMessage.addListener(
+            (request, sender, sendResponse) => {
+              console.log("📨 Message from extension:", request);
+              document.getElementById("extension-status").textContent = "Yes";
+              document.getElementById("connection-status").innerHTML =
+                "<strong>Status:</strong> Extension connected successfully!";
+              document.getElementById("connection-status").className =
+                "status success";
+            }
+          );
+        } catch (e) {
+          console.log("Extension context not available:", e);
+        }
+      }
+
+      // Update status periodically
+      let checkCount = 0;
+      const statusCheck = setInterval(() => {
+        checkCount++;
+        if (checkCount > 30) {
+          // Stop after 30 seconds
+          clearInterval(statusCheck);
+          return;
+        }
+
+        // This is just for the demo - in reality the extension will communicate directly
+        if (document.getElementById("extension-status").textContent === "No") {
+          console.log(
+            `🔍 Status check ${checkCount}: Still waiting for extension...`
+          );
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>

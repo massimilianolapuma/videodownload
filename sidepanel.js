@@ -122,16 +122,112 @@ async function loadVideos() {
       return;
     }
 
-    // Request videos from content script
-    const response = await chrome.tabs.sendMessage(tab.id, {
-      action: "scanVideos",
-    });
+    // Check if we can inject content script
+    if (
+      !tab.url ||
+      tab.url.startsWith("chrome://") ||
+      tab.url.startsWith("chrome-extension://")
+    ) {
+      console.log("Cannot inject script into this type of page");
+      displayErrorMessage("Cannot access Chrome system pages");
+      return;
+    }
 
-    if (response?.videos) {
-      displayVideos(response.videos);
-    } else {
-      console.log("No videos found");
-      displayNoVideosMessage();
+    try {
+      // Try to establish connection with retry logic
+      let connected = false;
+      let retries = 3;
+
+      while (!connected && retries > 0) {
+        try {
+          console.log(
+            `Attempting to connect to content script (${4 - retries}/3)...`
+          );
+
+          // First, try to ping the content script
+          const pingResponse = await chrome.tabs.sendMessage(tab.id, {
+            action: "ping",
+          });
+
+          if (pingResponse?.success) {
+            console.log("Content script is ready");
+            connected = true;
+          } else {
+            throw new Error("Invalid ping response");
+          }
+        } catch (pingError) {
+          console.log("Content script not responding, injecting...");
+
+          try {
+            // Inject the content script
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ["content.js"],
+            });
+
+            // Wait longer for the content script to initialize
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            // Try to ping again after injection
+            const pingResponse = await chrome.tabs.sendMessage(tab.id, {
+              action: "ping",
+            });
+            if (pingResponse?.success) {
+              console.log("Content script ready after injection");
+              connected = true;
+            } else {
+              retries--;
+              if (retries > 0) {
+                console.log(
+                  `Ping failed, retrying... (${retries} attempts left)`
+                );
+                await new Promise((resolve) => setTimeout(resolve, 500));
+              }
+            }
+          } catch (injectionError) {
+            console.error("Failed to inject content script:", injectionError);
+            retries--;
+            if (retries > 0) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+          }
+        }
+      }
+
+      if (!connected) {
+        throw new Error(
+          "Could not establish connection to content script after 3 attempts"
+        );
+      }
+
+      // Now request videos from content script
+      console.log("Requesting video scan...");
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        action: "scanVideos",
+      });
+
+      if (response?.videos) {
+        console.log(`Found ${response.videos.length} videos`);
+        displayVideos(response.videos);
+      } else {
+        console.log("No videos found in response");
+        displayNoVideosMessage();
+      }
+    } catch (innerError) {
+      console.error("Error communicating with content script:", innerError);
+
+      // Show appropriate error based on the error type
+      if (innerError.message.includes("Cannot access")) {
+        displayErrorMessage("Cannot access this page. Try refreshing.");
+      } else if (innerError.message.includes("connection")) {
+        displayErrorMessage(
+          "Connection failed. Please refresh the page and try again."
+        );
+      } else {
+        displayErrorMessage(
+          "Failed to scan for videos. Please refresh the page."
+        );
+      }
     }
   } catch (error) {
     console.error("Error loading videos:", error);
@@ -190,14 +286,18 @@ function displayNoVideosMessage() {
   `;
 }
 
-// Display error message
-function displayErrorMessage() {
+// Display error message with custom text
+function displayErrorMessage(customMessage) {
   const container = document.getElementById("videos-container");
   if (!container) return;
 
   container.innerHTML = `
     <div class="error-message">
-      <p>Failed to load videos. Please refresh the page and try again.</p>
+      <p>${
+        customMessage ||
+        "Failed to load videos. Please refresh the page and try again."
+      }</p>
+      <button id="retry-btn">Retry</button>
     </div>
   `;
 }
@@ -213,6 +313,10 @@ function setupEventListeners() {
 
     if (e.target.id === "force-scan-btn") {
       await forceScan();
+    }
+
+    if (e.target.id === "retry-btn") {
+      await loadVideos();
     }
   });
 
@@ -238,6 +342,57 @@ async function handleDownload(video) {
 
     if (!tab) {
       throw new Error("No active tab found");
+    }
+
+    // Ensure content script is loaded with retry logic
+    let connected = false;
+    let retries = 3;
+
+    while (!connected && retries > 0) {
+      try {
+        const pingResponse = await chrome.tabs.sendMessage(tab.id, {
+          action: "ping",
+        });
+        if (pingResponse?.success) {
+          connected = true;
+        } else {
+          throw new Error("Invalid ping response");
+        }
+      } catch (pingError) {
+        console.log("Content script not responding for download, injecting...");
+
+        try {
+          // Inject content script if not loaded
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ["content.js"],
+          });
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Try ping again
+          const pingResponse = await chrome.tabs.sendMessage(tab.id, {
+            action: "ping",
+          });
+          if (pingResponse?.success) {
+            connected = true;
+          } else {
+            retries--;
+          }
+        } catch (injectionError) {
+          console.error("Download injection failed:", injectionError);
+          retries--;
+        }
+      }
+
+      if (!connected && retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+
+    if (!connected) {
+      throw new Error(
+        "Could not establish connection to content script for download"
+      );
     }
 
     // Generate filename using the utility functions defined above
@@ -275,6 +430,59 @@ async function forceScan() {
     }
 
     showNotification("Scanning for videos...", "info");
+
+    // Ensure content script is loaded with retry logic
+    let connected = false;
+    let retries = 3;
+
+    while (!connected && retries > 0) {
+      try {
+        const pingResponse = await chrome.tabs.sendMessage(tab.id, {
+          action: "ping",
+        });
+        if (pingResponse?.success) {
+          connected = true;
+        } else {
+          throw new Error("Invalid ping response");
+        }
+      } catch (pingError) {
+        console.log(
+          "Content script not responding for force scan, injecting..."
+        );
+
+        try {
+          // Inject content script if not loaded
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ["content.js"],
+          });
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Try ping again
+          const pingResponse = await chrome.tabs.sendMessage(tab.id, {
+            action: "ping",
+          });
+          if (pingResponse?.success) {
+            connected = true;
+          } else {
+            retries--;
+          }
+        } catch (injectionError) {
+          console.error("Force scan injection failed:", injectionError);
+          retries--;
+        }
+      }
+
+      if (!connected && retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+
+    if (!connected) {
+      throw new Error(
+        "Could not establish connection to content script for force scan"
+      );
+    }
 
     const response = await chrome.tabs.sendMessage(tab.id, {
       action: "forceScan",
