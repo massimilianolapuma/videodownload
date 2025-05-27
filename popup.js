@@ -660,10 +660,17 @@ class VideoDownloaderPopup {
     }
   }
 
-  getExtensionFromUrl(url) {
-    if (!url) return ".mp4"; // Default extension
+  // Add these utility functions if they're missing
+  sanitizeFilename(filename) {
+    return filename
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .replace(/\s+/g, "_")
+      .substring(0, 100);
+  }
 
-    // For blob URLs, default to .mp4
+  getExtensionFromUrl(url) {
+    if (!url) return ".mp4";
+
     if (url.startsWith("blob:")) {
       return ".mp4";
     }
@@ -682,27 +689,48 @@ class VideoDownloaderPopup {
       console.debug("Could not parse URL for extension:", e);
     }
 
-    return ".mp4"; // Default extension
-  }
-
-  sanitizeFilename(filename) {
-    // Remove invalid characters
-    return filename
-      .replace(/[<>:"/\\|?*]/g, "_")
-      .replace(/\s+/g, "_")
-      .substring(0, 100);
+    return ".mp4";
   }
 
   showNotification(message, type = "info") {
-    // Implementation of notification display
     const notification = document.createElement("div");
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
 
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 10000;
+      transition: opacity 0.3s ease;
+      max-width: 300px;
+      word-wrap: break-word;
+    `;
+
+    switch (type) {
+      case "success":
+        notification.style.backgroundColor = "#4CAF50";
+        notification.style.color = "white";
+        break;
+      case "error":
+        notification.style.backgroundColor = "#f44336";
+        notification.style.color = "white";
+        break;
+      default:
+        notification.style.backgroundColor = "#2196F3";
+        notification.style.color = "white";
+    }
+
     document.body.appendChild(notification);
 
     setTimeout(() => {
-      notification.remove();
+      notification.style.opacity = "0";
+      setTimeout(() => {
+        notification.remove();
+      }, 300);
     }, 3000);
   }
 }

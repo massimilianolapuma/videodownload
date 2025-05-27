@@ -593,6 +593,86 @@ class VideoDownloaderSidePanel {
     }
   }
 
+  // Add these utility functions if they don't exist
+  sanitizeFilename(filename) {
+    // Remove invalid characters and spaces
+    return filename
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .replace(/\s+/g, "_")
+      .substring(0, 100); // Limit length
+  }
+
+  getExtensionFromUrl(url) {
+    if (!url) return ".mp4";
+
+    // For blob URLs, default to .mp4
+    if (url.startsWith("blob:")) {
+      return ".mp4";
+    }
+
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
+      if (match) {
+        const ext = match[1].toLowerCase();
+        if (["mp4", "webm", "mkv", "avi", "mov", "flv"].includes(ext)) {
+          return "." + ext;
+        }
+      }
+    } catch (e) {
+      console.debug("Could not parse URL for extension:", e);
+    }
+
+    return ".mp4";
+  }
+
+  showNotification(message, type = "info") {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+
+    // Style the notification
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 10000;
+      transition: opacity 0.3s ease;
+      max-width: 300px;
+      word-wrap: break-word;
+    `;
+
+    // Set colors based on type
+    switch (type) {
+      case "success":
+        notification.style.backgroundColor = "#4CAF50";
+        notification.style.color = "white";
+        break;
+      case "error":
+        notification.style.backgroundColor = "#f44336";
+        notification.style.color = "white";
+        break;
+      default:
+        notification.style.backgroundColor = "#2196F3";
+        notification.style.color = "white";
+    }
+
+    document.body.appendChild(notification);
+
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      notification.style.opacity = "0";
+      setTimeout(() => {
+        notification.remove();
+      }, 300);
+    }, 3000);
+  }
+
   async handleDownload(video) {
     try {
       console.log("Starting download for video:", video);
@@ -628,38 +708,6 @@ class VideoDownloaderSidePanel {
       console.error("Download error:", error);
       showNotification(`Download failed: ${error.message}`, "error");
     }
-  }
-
-  getExtensionFromUrl(url) {
-    if (!url) return ".mp4";
-
-    // For blob URLs, default to .mp4
-    if (url.startsWith("blob:")) {
-      return ".mp4";
-    }
-
-    try {
-      const urlObj = new URL(url);
-      const pathname = urlObj.pathname;
-      const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
-      if (match) {
-        const ext = match[1].toLowerCase();
-        if (["mp4", "webm", "mkv", "avi", "mov", "flv"].includes(ext)) {
-          return "." + ext;
-        }
-      }
-    } catch (e) {
-      console.debug("Could not parse URL for extension:", e);
-    }
-
-    return ".mp4";
-  }
-
-  sanitizeFilename(filename) {
-    return filename
-      .replace(/[<>:"/\\|?*]/g, "_")
-      .replace(/\s+/g, "_")
-      .substring(0, 100);
   }
 
   handleDownloadUpdate(data) {
