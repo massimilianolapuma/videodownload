@@ -593,44 +593,73 @@ class VideoDownloaderSidePanel {
     }
   }
 
-  async handleDownload(video, index, button) {
-    const videoUrl = button.dataset.videoUrl;
-    const qualitySelect = button.parentElement.querySelector(".quality-select");
-    const selectedUrl = qualitySelect ? qualitySelect.value : videoUrl;
-
-    button.disabled = true;
-    button.textContent = "⏳ Starting...";
-
+  async handleDownload(video) {
     try {
-      // Show progress container
-      const progressContainer = document.getElementById(`progress-${index}`);
-      progressContainer.classList.add("show");
+      console.log("Starting download for video:", video);
 
-      // Send download request to background script
-      const response = await chrome.runtime.sendMessage({
+      // Get the active tab
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+
+      if (!tab) {
+        throw new Error("No active tab found");
+      }
+
+      // Generate filename
+      const filename =
+        sanitizeFilename(video.title || "video") +
+        getExtensionFromUrl(video.url);
+
+      // Send download request to content script instead of background script
+      const response = await chrome.tabs.sendMessage(tab.id, {
         action: "downloadVideo",
-        video: {
-          ...video,
-          url: selectedUrl,
-          index: index,
-        },
+        url: video.url,
+        filename: filename,
       });
 
       if (response?.success) {
-        button.textContent = "⬇️ Downloading...";
+        showNotification("Download started successfully", "success");
       } else {
         throw new Error(response?.error || "Download failed");
       }
     } catch (error) {
       console.error("Download error:", error);
-      button.disabled = false;
-      button.textContent = "❌ Failed";
-      this.showStatus("error", "Download failed: " + error.message);
-
-      setTimeout(() => {
-        button.textContent = "📥 Download";
-      }, 3000);
+      showNotification(`Download failed: ${error.message}`, "error");
     }
+  }
+
+  getExtensionFromUrl(url) {
+    if (!url) return ".mp4";
+
+    // For blob URLs, default to .mp4
+    if (url.startsWith("blob:")) {
+      return ".mp4";
+    }
+
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
+      if (match) {
+        const ext = match[1].toLowerCase();
+        if (["mp4", "webm", "mkv", "avi", "mov", "flv"].includes(ext)) {
+          return "." + ext;
+        }
+      }
+    } catch (e) {
+      console.debug("Could not parse URL for extension:", e);
+    }
+
+    return ".mp4";
+  }
+
+  sanitizeFilename(filename) {
+    return filename
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .replace(/\s+/g, "_")
+      .substring(0, 100);
   }
 
   handleDownloadUpdate(data) {

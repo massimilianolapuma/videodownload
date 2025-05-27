@@ -625,13 +625,7 @@ class VideoDownloaderPopup {
 
   async downloadVideo(video) {
     try {
-      const downloadBtn = document.querySelector(
-        `[data-url="${video.url}"] .download-btn`
-      );
-      if (downloadBtn) {
-        downloadBtn.textContent = "Downloading...";
-        downloadBtn.disabled = true;
-      }
+      console.log("Starting download for:", video);
 
       // Get the active tab
       const [tab] = await chrome.tabs.query({
@@ -649,7 +643,6 @@ class VideoDownloaderPopup {
         this.getExtensionFromUrl(video.url);
 
       // Send download request to content script
-      // The content script will handle blob URL conversion if needed
       const response = await chrome.tabs.sendMessage(tab.id, {
         action: "downloadVideo",
         url: video.url,
@@ -658,30 +651,12 @@ class VideoDownloaderPopup {
 
       if (response?.success) {
         this.showNotification("Download started successfully", "success");
-        if (downloadBtn) {
-          downloadBtn.textContent = "✓ Started";
-          setTimeout(() => {
-            downloadBtn.textContent = "Download";
-            downloadBtn.disabled = false;
-          }, 2000);
-        }
       } else {
         throw new Error(response?.error || "Download failed");
       }
     } catch (error) {
       console.error("Download error:", error);
       this.showNotification(`Download failed: ${error.message}`, "error");
-
-      const downloadBtn = document.querySelector(
-        `[data-url="${video.url}"] .download-btn`
-      );
-      if (downloadBtn) {
-        downloadBtn.textContent = "Error";
-        downloadBtn.disabled = false;
-        setTimeout(() => {
-          downloadBtn.textContent = "Download";
-        }, 2000);
-      }
     }
   }
 
