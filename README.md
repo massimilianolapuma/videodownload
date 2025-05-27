@@ -1,5 +1,7 @@
 # Video Downloader Chrome Extension
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=massimilianolapuma_videodownload&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=massimilianolapuma_videodownload)
+
 A Chrome extension for downloading videos from web pages, similar to Video DownloadHelper.
 
 ## 📁 Project Structure
