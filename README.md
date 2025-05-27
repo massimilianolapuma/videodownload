@@ -94,6 +94,40 @@ For detailed installation instructions, see [`docs/INSTALLATION_GUIDE.md`](docs/
 
 ## Development
 
+### Building the Extension
+
+1. Install dependencies (first time only):
+
+   ```bash
+   npm install
+   ```
+
+2. Build the extension:
+
+   ```bash
+   npm run build        # Increments patch version (1.0.0 -> 1.0.1)
+   npm run build:minor  # Increments minor version (1.0.0 -> 1.1.0)
+   npm run build:major  # Increments major version (1.0.0 -> 2.0.0)
+   ```
+
+3. Watch for changes during development:
+
+   ```bash
+   npm run watch
+   ```
+
+4. Clean build artifacts:
+   ```bash
+   npm run clean
+   ```
+
+### Build Output
+
+- The build process creates a `build/` directory with all extension files
+- Version is automatically incremented in `manifest.json`
+- A zip file is created for easy distribution
+- Version history is logged in `version-log.txt`
+
 ### Testing
 
 Run the test suite to validate functionality:

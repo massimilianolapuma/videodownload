@@ -1,1 +1,22 @@
-video-downloader-extension.zip
+# Build outputs
+build/
+*.zip
+
+# Version log
+version-log.txt
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp

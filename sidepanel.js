@@ -593,7 +593,7 @@ class VideoDownloaderSidePanel {
     }
   }
 
-  // Add these utility functions if they don't exist
+  // Add these utility functions near the top of the file, after any initial declarations
   sanitizeFilename(filename) {
     // Remove invalid characters and spaces
     return filename
@@ -645,6 +645,7 @@ class VideoDownloaderSidePanel {
       transition: opacity 0.3s ease;
       max-width: 300px;
       word-wrap: break-word;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     `;
 
     // Set colors based on type
@@ -655,6 +656,10 @@ class VideoDownloaderSidePanel {
         break;
       case "error":
         notification.style.backgroundColor = "#f44336";
+        notification.style.color = "white";
+        break;
+      case "warning":
+        notification.style.backgroundColor = "#ff9800";
         notification.style.color = "white";
         break;
       default:
@@ -668,7 +673,9 @@ class VideoDownloaderSidePanel {
     setTimeout(() => {
       notification.style.opacity = "0";
       setTimeout(() => {
-        notification.remove();
+        if (notification.parentNode) {
+          notification.remove();
+        }
       }, 300);
     }, 3000);
   }

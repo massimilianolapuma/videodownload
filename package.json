@@ -3,7 +3,12 @@
     "version": "1.0.0",
     "description": "Chrome extension for downloading videos from web pages",
     "scripts": {
-        "build": "echo 'Building extension...' && npm run validate",
+        "build": "node build.js",
+        "build:major": "node build.js major",
+        "build:minor": "node build.js minor",
+        "build:patch": "node build.js patch",
+        "watch": "node watch.js",
+        "clean": "rm -rf build/ *.zip",
         "validate": "echo 'Validating manifest...' && node -e \"console.log('Manifest validation:', JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).manifest_version === 3 ? 'OK' : 'FAILED')\"",
         "health-check": "node health-check.js",
         "package": "bash package-extension.sh",
@@ -19,7 +24,9 @@
     ],
     "author": "Video Downloader Team",
     "license": "MIT",
-    "devDependencies": {},
+    "devDependencies": {
+        "chokidar": "^3.5.3"
+    },
     "engines": {
         "node": ">=14.0.0"
     },
