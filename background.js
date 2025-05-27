@@ -416,6 +416,8 @@ class VideoDownloaderBackground {
         }
 
         case "downloadBlob": {
+          console.log("Processing blob download request");
+
           try {
             // Convert base64 to blob
             const blob = this.base64ToBlob(request.data, request.mimeType);
@@ -432,13 +434,17 @@ class VideoDownloaderBackground {
               },
               (downloadId) => {
                 if (chrome.runtime.lastError) {
-                  console.error("Download error:", chrome.runtime.lastError);
+                  console.error(
+                    "Blob download error:",
+                    chrome.runtime.lastError
+                  );
+                  URL.revokeObjectURL(blobUrl); // Clean up on error
                   sendResponse({
                     success: false,
                     error: chrome.runtime.lastError.message,
                   });
                 } else {
-                  console.log("Download started:", downloadId);
+                  console.log("Blob download started:", downloadId);
 
                   // Clean up the blob URL after a delay
                   setTimeout(() => {

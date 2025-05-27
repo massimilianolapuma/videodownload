@@ -625,7 +625,13 @@ class VideoDownloaderPopup {
 
   async downloadVideo(video) {
     try {
-      console.log("Starting download for:", video);
+      const downloadBtn = document.querySelector(
+        `[data-url="${video.url}"] .download-btn`
+      );
+      if (downloadBtn) {
+        downloadBtn.textContent = "Downloading...";
+        downloadBtn.disabled = true;
+      }
 
       // Get the active tab
       const [tab] = await chrome.tabs.query({
@@ -637,22 +643,71 @@ class VideoDownloaderPopup {
         throw new Error("No active tab found");
       }
 
+      // Generate filename
+      const filename =
+        this.sanitizeFilename(video.title || "video") +
+        this.getExtensionFromUrl(video.url);
+
       // Send download request to content script
+      // The content script will handle blob URL conversion if needed
       const response = await chrome.tabs.sendMessage(tab.id, {
         action: "downloadVideo",
         url: video.url,
-        filename: this.sanitizeFilename(video.title || "video") + ".mp4",
+        filename: filename,
       });
 
       if (response?.success) {
         this.showNotification("Download started successfully", "success");
+        if (downloadBtn) {
+          downloadBtn.textContent = "✓ Started";
+          setTimeout(() => {
+            downloadBtn.textContent = "Download";
+            downloadBtn.disabled = false;
+          }, 2000);
+        }
       } else {
         throw new Error(response?.error || "Download failed");
       }
     } catch (error) {
       console.error("Download error:", error);
       this.showNotification(`Download failed: ${error.message}`, "error");
+
+      const downloadBtn = document.querySelector(
+        `[data-url="${video.url}"] .download-btn`
+      );
+      if (downloadBtn) {
+        downloadBtn.textContent = "Error";
+        downloadBtn.disabled = false;
+        setTimeout(() => {
+          downloadBtn.textContent = "Download";
+        }, 2000);
+      }
     }
+  }
+
+  getExtensionFromUrl(url) {
+    if (!url) return ".mp4"; // Default extension
+
+    // For blob URLs, default to .mp4
+    if (url.startsWith("blob:")) {
+      return ".mp4";
+    }
+
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
+      if (match) {
+        const ext = match[1].toLowerCase();
+        if (["mp4", "webm", "mkv", "avi", "mov", "flv"].includes(ext)) {
+          return "." + ext;
+        }
+      }
+    } catch (e) {
+      console.debug("Could not parse URL for extension:", e);
+    }
+
+    return ".mp4"; // Default extension
   }
 
   sanitizeFilename(filename) {
