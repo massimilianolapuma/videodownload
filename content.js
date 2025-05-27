@@ -150,66 +150,92 @@ class VideoDownloaderContent {
           // Check if it's a blob URL
           if (url.startsWith("blob:")) {
             console.log("🔄 Processing blob URL download:", url);
-            try {
-              // Convert blob URL to base64
-              const base64Data = await blobUrlToBase64(url);
 
-              // Detect MIME type from base64 data
-              let mimeType = "video/mp4"; // Default
-              if (base64Data.includes("data:video/webm")) {
-                mimeType = "video/webm";
-              } else if (base64Data.includes("data:video/ogg")) {
-                mimeType = "video/ogg";
-              } else if (base64Data.includes("data:image/")) {
-                mimeType = base64Data.split(";")[0].split(":")[1];
-              }
-
-              console.log("✅ Detected MIME type:", mimeType);
-
-              // Send base64 data to background script
-              await chrome.runtime.sendMessage({
-                action: "downloadBlob",
-                data: base64Data,
-                filename: filename,
-                mimeType: mimeType,
-              });
-
-              sendResponse({
-                success: true,
-                message: "Blob download initiated successfully",
-              });
-            } catch (error) {
-              console.error("❌ Failed to convert blob URL:", error);
-
-              // Try alternative download method for blob URLs
+            // Special handling for YouTube and similar platforms
+            if (
+              window.location.hostname.includes("youtube.com") ||
+              window.location.hostname.includes("youtu.be")
+            ) {
+              console.log(
+                "🎥 YouTube detected - using alternative download method"
+              );
               try {
-                console.log(
-                  "🔄 Attempting alternative blob download method..."
-                );
-                const video = { url, title: filename.replace(/\.[^.]+$/, "") };
-                const result =
-                  await window.videoDownloaderContent.handleBlobUrl(video);
-
-                if (result.success) {
-                  sendResponse({
-                    success: true,
-                    message: "Alternative blob download successful",
-                  });
-                } else {
-                  sendResponse({
-                    success: false,
-                    error: `Blob conversion failed: ${error.message}. Alternative method also failed: ${result.error}`,
-                  });
-                }
-              } catch (altError) {
-                console.error(
-                  "❌ Alternative blob download also failed:",
-                  altError
-                );
+                // For YouTube, try to find alternative video sources or use different approach
+                const result = await this.handleYouTubeDownload(url, filename);
+                sendResponse(result);
+              } catch (error) {
+                console.error("❌ YouTube download failed:", error);
                 sendResponse({
                   success: false,
-                  error: `Blob download failed. Primary error: ${error.message}. Alternative error: ${altError.message}. YouTube videos may require using the extension's video detection feature instead.`,
+                  error: `YouTube download not supported: ${error.message}. Please try using youtube-dl or similar tools for YouTube videos.`,
                 });
+              }
+            } else {
+              // Try blob conversion for other sites
+              try {
+                // Convert blob URL to base64
+                const base64Data = await blobUrlToBase64(url);
+
+                // Detect MIME type from base64 data
+                let mimeType = "video/mp4"; // Default
+                if (base64Data.includes("data:video/webm")) {
+                  mimeType = "video/webm";
+                } else if (base64Data.includes("data:video/ogg")) {
+                  mimeType = "video/ogg";
+                } else if (base64Data.includes("data:image/")) {
+                  mimeType = base64Data.split(";")[0].split(":")[1];
+                }
+
+                console.log("✅ Detected MIME type:", mimeType);
+
+                // Send base64 data to background script
+                await chrome.runtime.sendMessage({
+                  action: "downloadBlob",
+                  data: base64Data,
+                  filename: filename,
+                  mimeType: mimeType,
+                });
+
+                sendResponse({
+                  success: true,
+                  message: "Blob download initiated successfully",
+                });
+              } catch (error) {
+                console.error("❌ Failed to convert blob URL:", error);
+
+                // Try alternative download method for blob URLs
+                try {
+                  console.log(
+                    "🔄 Attempting alternative blob download method..."
+                  );
+                  const video = {
+                    url,
+                    title: filename.replace(/\.[^.]+$/, ""),
+                  };
+                  const result =
+                    await window.videoDownloaderContent.handleBlobUrl(video);
+
+                  if (result.success) {
+                    sendResponse({
+                      success: true,
+                      message: "Alternative blob download successful",
+                    });
+                  } else {
+                    sendResponse({
+                      success: false,
+                      error: `Blob conversion failed: ${error.message}. Alternative method also failed: ${result.error}`,
+                    });
+                  }
+                } catch (altError) {
+                  console.error(
+                    "❌ Alternative blob download also failed:",
+                    altError
+                  );
+                  sendResponse({
+                    success: false,
+                    error: `Blob download failed. Primary error: ${error.message}. Alternative error: ${altError.message}. YouTube videos may require using the extension's video detection feature instead.`,
+                  });
+                }
               }
             }
           } else {
@@ -1581,6 +1607,19 @@ class VideoDownloaderContent {
       console.error("❌ Failed to store videos:", error);
     }
   }
+
+  // YouTube-specific download handler
+  async handleYouTubeDownload(blobUrl, filename) {
+    console.log("🎥 Handling YouTube download request");
+
+    // For YouTube, blob URLs are typically not accessible due to security restrictions
+    // Instead, we should inform the user about the limitation and suggest alternatives
+    return {
+      success: false,
+      error:
+        "YouTube videos cannot be downloaded directly due to platform restrictions. Please use dedicated YouTube download tools like youtube-dl, yt-dlp, or online YouTube downloaders.",
+    };
+  }
 }
 
 // Enhanced function to convert blob URL to base64 with fallback handling
@@ -1623,22 +1662,68 @@ async function blobUrlToBase64(blobUrl) {
   } catch (error) {
     console.error("❌ Primary blob conversion failed:", error);
 
-    // Method 2: Try using XMLHttpRequest for cross-origin requests
-    try {
-      console.log("🔄 Trying XMLHttpRequest fallback...");
-      return await blobUrlToBase64WithXHR(blobUrl);
-    } catch (xhrError) {
-      console.error("❌ XMLHttpRequest fallback failed:", xhrError);
+    // Check if this is a security/CORS error (common with YouTube and similar sites)
+    if (
+      error.message.includes("Failed to fetch") ||
+      error.message.includes("CORS") ||
+      error.message.includes("Network error")
+    ) {
+      // For security-restricted blob URLs, try alternative methods
+      console.log(
+        "🔒 Security restriction detected, trying alternative methods..."
+      );
 
-      // Method 3: Try finding the corresponding video element and extracting from it
+      // Method 2: Try using XMLHttpRequest for cross-origin requests
       try {
-        console.log("🔄 Trying video element extraction fallback...");
-        return await extractBlobFromVideoElement(blobUrl);
-      } catch (videoError) {
-        console.error("❌ Video element fallback failed:", videoError);
-        throw new Error(
-          `All blob conversion methods failed. Primary: ${error.message}, XHR: ${xhrError.message}, Video: ${videoError.message}`
-        );
+        console.log("🔄 Trying XMLHttpRequest fallback...");
+        return await blobUrlToBase64WithXHR(blobUrl);
+      } catch (xhrError) {
+        console.error("❌ XMLHttpRequest fallback failed:", xhrError);
+
+        // Method 3: Try finding the corresponding video element and extracting from it
+        try {
+          console.log("🔄 Trying video element extraction fallback...");
+          return await extractBlobFromVideoElement(blobUrl);
+        } catch (videoError) {
+          console.error("❌ Video element fallback failed:", videoError);
+
+          // If we're on YouTube or similar platforms, provide specific guidance
+          if (
+            window.location.hostname.includes("youtube.com") ||
+            window.location.hostname.includes("youtu.be") ||
+            window.location.hostname.includes("vimeo.com") ||
+            window.location.hostname.includes("dailymotion.com")
+          ) {
+            throw new Error(
+              `Video download blocked by platform security restrictions. This is common on ${window.location.hostname}. Please use dedicated download tools for this platform.`
+            );
+          }
+
+          throw new Error(
+            `All blob conversion methods failed. Primary: ${error.message}, XHR: ${xhrError.message}, Video: ${videoError.message}`
+          );
+        }
+      }
+    } else {
+      // For other types of errors, continue with original fallback logic
+
+      // Method 2: Try using XMLHttpRequest for cross-origin requests
+      try {
+        console.log("🔄 Trying XMLHttpRequest fallback...");
+        return await blobUrlToBase64WithXHR(blobUrl);
+      } catch (xhrError) {
+        console.error("❌ XMLHttpRequest fallback failed:", xhrError);
+
+        // Method 3: Try finding the corresponding video element and extracting from it
+        try {
+          console.log("🔄 Trying video element extraction fallback...");
+          return await extractBlobFromVideoElement(blobUrl);
+        } catch (videoError) {
+          console.error("❌ Video element fallback failed:", videoError);
+          throw new Error(
+            `All blob conversion methods failed. Primary: ${error.message}, XHR: ${xhrError.message}, Video: ${videoError.message}`
+          );
+        }
       }
     }
   }
