@@ -826,12 +826,8 @@ function updateVideoDisplay(videos) {
   if (videos && videos.length > 0) {
     // Show videos
     if (emptyState) emptyState.style.display = "none";
-    if (videoCount) {
-      videoCount.style.display = "block";
-      videoCount.textContent = `${videos.length} video${
-        videos.length === 1 ? "" : "s"
-      } found`;
-    }
+    // Keep videoCount hidden since we use statusText in header for video count
+    if (videoCount) videoCount.style.display = "none";
 
     videoList.innerHTML = "";
     videos.forEach((video, index) => {
