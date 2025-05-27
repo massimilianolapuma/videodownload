@@ -107,13 +107,28 @@ class VideoDownloaderBackground {
         });
         console.log(`Stored ${response.videos.length} videos for tab ${tabId}`);
 
-        // Notify side panel directly (no broadcast needed for side panels)
-        // Side panel will reload videos when it receives the triggerVideoScan response
+        // Notify side panel about the videos update
+        this.broadcastMessage({
+          action: "videosUpdated",
+          data: {
+            tabId: tabId,
+            videos: response.videos,
+          },
+        });
       } else {
         console.log("No videos found in scan response");
         // Store empty array to clear any existing videos
         await chrome.storage.local.set({
           [`videos_${tabId}`]: [],
+        });
+
+        // Notify side panel about empty results
+        this.broadcastMessage({
+          action: "videosUpdated",
+          data: {
+            tabId: tabId,
+            videos: [],
+          },
         });
       }
     } catch (error) {
@@ -122,6 +137,15 @@ class VideoDownloaderBackground {
       try {
         await chrome.storage.local.set({
           [`videos_${tabId}`]: [],
+        });
+
+        // Notify side panel about the error
+        this.broadcastMessage({
+          action: "videosUpdated",
+          data: {
+            tabId: tabId,
+            videos: [],
+          },
         });
       } catch (storageError) {
         console.error("Error storing empty videos array:", storageError);

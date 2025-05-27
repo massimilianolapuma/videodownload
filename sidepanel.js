@@ -55,6 +55,8 @@ class VideoDownloaderSidePanel {
   setupMessageListener() {
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log("📨 Sidepanel received message:", message);
+
       switch (message.action) {
         case "videosUpdated":
           this.handleVideosUpdated(message.data);
@@ -68,6 +70,21 @@ class VideoDownloaderSidePanel {
         case "downloadError":
           this.handleDownloadError(message.data);
           break;
+      }
+    });
+
+    // Listen for storage changes to catch videos updated by content script
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === "local" && this.currentTabId) {
+        const storageKey = `videos_${this.currentTabId}`;
+        if (changes[storageKey]) {
+          console.log("📦 Storage changed for videos:", changes[storageKey]);
+          const newVideos = changes[storageKey].newValue || [];
+          this.handleVideosUpdated({
+            tabId: this.currentTabId,
+            videos: newVideos,
+          });
+        }
       }
     });
   }
@@ -171,11 +188,11 @@ class VideoDownloaderSidePanel {
       console.log("Trigger rescan response:", response);
 
       if (response?.success) {
-        // Wait a bit for the scan to complete and then reload videos
-        setTimeout(async () => {
-          await this.loadVideosForCurrentTab();
-          this.showScanningIndicator(false);
-        }, 2000);
+        // Don't wait with setTimeout - the videos will be updated via message listener
+        // Just show that we're scanning and let the message handler update the UI
+        console.log(
+          "✅ Video scan triggered successfully, waiting for results..."
+        );
       } else {
         this.updateStatus("error", "Failed to trigger video scan");
         this.showScanningIndicator(false);
@@ -201,11 +218,25 @@ class VideoDownloaderSidePanel {
   }
 
   handleVideosUpdated(data) {
+    console.log("🎬 Videos updated received:", data);
+
     if (data.tabId === this.currentTabId) {
       this.videos = data.videos || [];
       this.renderVideos();
-      this.updateStatus("ready", `${this.videos.length} videos found`);
+
+      const statusMessage =
+        this.videos.length > 0
+          ? `${this.videos.length} videos found`
+          : "No videos found - try rescanning";
+
+      this.updateStatus("ready", statusMessage);
       this.showScanningIndicator(false);
+
+      console.log(`✅ Updated sidepanel with ${this.videos.length} videos`);
+    } else {
+      console.log(
+        `⏭️ Ignoring videos update for different tab: ${data.tabId} (current: ${this.currentTabId})`
+      );
     }
   }
 

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Downloader Test Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      h2 {
+        color: #666;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+      }
+      video {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        margin: 10px 0;
+      }
+      .instructions {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .success {
+        background: #e8f5e8;
+        color: #2e7d32;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎥 Video Downloader Extension Test Page</h1>
+
+    <div class="instructions">
+      <h3>📋 Testing Instructions:</h3>
+      <ol>
+        <li>
+          Make sure the Video Downloader extension is installed and enabled
+        </li>
+        <li>Click the extension icon in the toolbar</li>
+        <li>Click "Open Side Panel" in the popup</li>
+        <li>Click "Rescan Videos" in the side panel</li>
+        <li>You should see the videos below detected and listed</li>
+      </ol>
+    </div>
+
+    <div class="test-section">
+      <h2>🎬 HTML5 Video Test</h2>
+      <p>This video should be detected by the extension:</p>
+      <video controls>
+        <source
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          type="video/mp4"
+        />
+        <source
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.webm"
+          type="video/webm"
+        />
+        Your browser does not support the video tag.
+      </video>
+      <p><strong>Title:</strong> Big Buck Bunny Sample Video</p>
+      <p><strong>Format:</strong> MP4/WebM</p>
+    </div>
+
+    <div class="test-section">
+      <h2>🔗 Direct Video Link Test</h2>
+      <p>Direct video URL for testing:</p>
+      <video controls>
+        <source
+          src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
+          type="video/mp4"
+        />
+        Your browser does not support the video tag.
+      </video>
+      <p><strong>Title:</strong> Sample Video 720p</p>
+      <p><strong>Format:</strong> MP4</p>
+    </div>
+
+    <div class="test-section">
+      <h2>✅ Expected Results</h2>
+      <div class="success">
+        If the extension is working correctly, you should see:
+        <ul>
+          <li>Both videos detected in the side panel</li>
+          <li>Video titles and download options displayed</li>
+          <li>Download buttons that work when clicked</li>
+          <li>Progress tracking for downloads</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // Add some JavaScript to simulate dynamic content
+      console.log("🎥 Video test page loaded");
+      console.log(
+        "Videos available:",
+        document.querySelectorAll("video").length
+      );
+
+      // Test dynamic video addition
+      setTimeout(() => {
+        console.log("Adding dynamic video element...");
+        const dynamicVideo = document.createElement("video");
+        dynamicVideo.controls = true;
+        dynamicVideo.src =
+          "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
+        dynamicVideo.style.maxWidth = "400px";
+        dynamicVideo.style.width = "100%";
+
+        const section = document.createElement("div");
+        section.className = "test-section";
+        section.innerHTML =
+          "<h2>🔄 Dynamic Video Test</h2><p>This video was added dynamically:</p>";
+        section.appendChild(dynamicVideo);
+        section.innerHTML +=
+          "<p><strong>Title:</strong> Elephants Dream (Dynamic)</p>";
+
+        document.body.appendChild(section);
+      }, 2000);
+    </script>
+  </body>
+</html>
