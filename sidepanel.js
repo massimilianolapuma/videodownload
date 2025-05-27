@@ -40,40 +40,6 @@ function showNotification(message, type = "info") {
   notification.className = `notification notification-${type}`;
   notification.textContent = message;
 
-  // Style the notification
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 20px;
-    border-radius: 4px;
-    font-size: 14px;
-    z-index: 10000;
-    transition: opacity 0.3s ease;
-    max-width: 300px;
-    word-wrap: break-word;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  `;
-
-  // Set colors based on type
-  switch (type) {
-    case "success":
-      notification.style.backgroundColor = "#4CAF50";
-      notification.style.color = "white";
-      break;
-    case "error":
-      notification.style.backgroundColor = "#f44336";
-      notification.style.color = "white";
-      break;
-    case "warning":
-      notification.style.backgroundColor = "#ff9800";
-      notification.style.color = "white";
-      break;
-    default:
-      notification.style.backgroundColor = "#2196F3";
-      notification.style.color = "white";
-  }
-
   document.body.appendChild(notification);
 
   // Remove notification after 3 seconds

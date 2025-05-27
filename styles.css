@@ -44,26 +44,26 @@
     --separator: rgba(60, 60, 67, 0.29);
     --separator-non-opaque: rgba(60, 60, 67, 0.36);
 
-    /* Typography Scale - Apple SF Pro Text/Display */
-    --text-large-title: 34px;
-    --text-title1: 28px;
-    --text-title2: 22px;
-    --text-title3: 20px;
-    --text-headline: 17px;
-    --text-body: 17px;
-    --text-callout: 16px;
-    --text-subhead: 15px;
-    --text-footnote: 13px;
-    --text-caption1: 12px;
-    --text-caption2: 11px;
+    /* Typography Scale - Apple SF Pro Text/Display (Optimized for Extension) */
+    --text-large-title: 16px;
+    --text-title1: 15px;
+    --text-title2: 14px;
+    --text-title3: 13px;
+    --text-headline: 12px;
+    --text-body: 11px;
+    --text-callout: 11px;
+    --text-subhead: 10px;
+    --text-footnote: 9px;
+    --text-caption1: 8px;
+    --text-caption2: 7px;
 
-    /* Spacing Scale (8pt grid system) */
-    --spacing-xs: 4px;
-    --spacing-sm: 8px;
-    --spacing-md: 16px;
-    --spacing-lg: 24px;
-    --spacing-xl: 32px;
-    --spacing-xxl: 48px;
+    /* Spacing Scale (4pt grid system for extension) */
+    --spacing-xs: 2px;
+    --spacing-sm: 4px;
+    --spacing-md: 8px;
+    --spacing-lg: 12px;
+    --spacing-xl: 16px;
+    --spacing-xxl: 24px;
 
     /* Border Radius */
     --radius-xs: 4px;
@@ -110,8 +110,8 @@
 
 /* Base styles */
 body {
-    width: 350px;
-    padding: var(--spacing-md);
+    width: 320px;
+    padding: var(--spacing-sm);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
     margin: 0;
     background-color: var(--background-secondary);
@@ -174,7 +174,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: var(--spacing-xs);
-    min-height: 44px; /* Apple's minimum touch target */
+    min-height: 32px; /* Apple's minimum touch target - optimized for extension */
     box-shadow: var(--shadow-sm);
 }
 
@@ -513,11 +513,11 @@ body {
 
 /* Side panel specific styles */
 .side-panel {
-    width: 380px;
+    width: 340px;
     min-height: 100vh;
     overflow-y: auto;
     background-color: var(--background-secondary);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
 }
 
 .download-item {
@@ -727,6 +727,43 @@ body {
 .video-item:focus {
     outline: 2px solid var(--system-blue);
     outline-offset: 2px;
+}
+
+/* Notification styles */
+.notification {
+    position: fixed;
+    top: var(--spacing-xl);
+    right: var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-footnote);
+    z-index: 10000;
+    transition: opacity var(--transition-medium);
+    max-width: 240px;
+    word-wrap: break-word;
+    box-shadow: var(--shadow-lg);
+    font-weight: 500;
+    letter-spacing: -0.31px;
+}
+
+.notification-success {
+    background-color: var(--system-green);
+    color: #ffffff;
+}
+
+.notification-error {
+    background-color: var(--system-red);
+    color: #ffffff;
+}
+
+.notification-warning {
+    background-color: var(--system-orange);
+    color: #ffffff;
+}
+
+.notification-info {
+    background-color: var(--system-blue);
+    color: #ffffff;
 }
 
 /* Responsive adjustments */
