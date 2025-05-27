@@ -149,22 +149,68 @@ class VideoDownloaderContent {
 
           // Check if it's a blob URL
           if (url.startsWith("blob:")) {
+            console.log("🔄 Processing blob URL download:", url);
             try {
               // Convert blob URL to base64
               const base64Data = await blobUrlToBase64(url);
+
+              // Detect MIME type from base64 data
+              let mimeType = "video/mp4"; // Default
+              if (base64Data.includes("data:video/webm")) {
+                mimeType = "video/webm";
+              } else if (base64Data.includes("data:video/ogg")) {
+                mimeType = "video/ogg";
+              } else if (base64Data.includes("data:image/")) {
+                mimeType = base64Data.split(";")[0].split(":")[1];
+              }
+
+              console.log("✅ Detected MIME type:", mimeType);
 
               // Send base64 data to background script
               await chrome.runtime.sendMessage({
                 action: "downloadBlob",
                 data: base64Data,
                 filename: filename,
-                mimeType: "video/mp4", // You might want to detect the actual MIME type
+                mimeType: mimeType,
               });
 
-              sendResponse({ success: true });
+              sendResponse({
+                success: true,
+                message: "Blob download initiated successfully",
+              });
             } catch (error) {
-              console.error("Failed to convert blob URL:", error);
-              sendResponse({ success: false, error: error.message });
+              console.error("❌ Failed to convert blob URL:", error);
+
+              // Try alternative download method for blob URLs
+              try {
+                console.log(
+                  "🔄 Attempting alternative blob download method..."
+                );
+                const video = { url, title: filename.replace(/\.[^.]+$/, "") };
+                const result =
+                  await window.videoDownloaderContent.handleBlobUrl(video);
+
+                if (result.success) {
+                  sendResponse({
+                    success: true,
+                    message: "Alternative blob download successful",
+                  });
+                } else {
+                  sendResponse({
+                    success: false,
+                    error: `Blob conversion failed: ${error.message}. Alternative method also failed: ${result.error}`,
+                  });
+                }
+              } catch (altError) {
+                console.error(
+                  "❌ Alternative blob download also failed:",
+                  altError
+                );
+                sendResponse({
+                  success: false,
+                  error: `Blob download failed. Primary error: ${error.message}. Alternative error: ${altError.message}. YouTube videos may require using the extension's video detection feature instead.`,
+                });
+              }
             }
           } else {
             // Regular URL, pass through to background
@@ -519,13 +565,26 @@ class VideoDownloaderContent {
       });
       if (response?.videos) {
         response.videos.forEach((detectedVideo) => {
-          if (!this.videos.some((v) => v.url === detectedVideo.url)) {
+          // Only add network videos that have meaningful metadata or are likely valid
+          const hasValidMetadata =
+            (detectedVideo.quality && detectedVideo.quality !== "Unknown") ||
+            (detectedVideo.size && detectedVideo.size !== "Unknown") ||
+            detectedVideo.duration ||
+            detectedVideo.width ||
+            detectedVideo.height ||
+            (detectedVideo.type &&
+              !detectedVideo.type.includes("xmlhttprequest"));
+
+          if (
+            !this.videos.some((v) => v.url === detectedVideo.url) &&
+            hasValidMetadata
+          ) {
             this.videos.push({
               url: detectedVideo.url,
               title: `Network Video (${detectedVideo.type})`,
               type: "network",
-              quality: "Unknown",
-              size: "Unknown",
+              quality: detectedVideo.quality || "Unknown",
+              size: detectedVideo.size || "Unknown",
               timestamp: detectedVideo.timestamp,
             });
           }
@@ -1518,21 +1577,152 @@ class VideoDownloaderContent {
   }
 }
 
-// Add this function to convert blob URL to base64
+// Enhanced function to convert blob URL to base64 with fallback handling
 async function blobUrlToBase64(blobUrl) {
+  console.log("🔄 Attempting to convert blob URL to base64:", blobUrl);
+
   try {
-    const response = await fetch(blobUrl);
+    // Method 1: Direct fetch (works for same-origin blob URLs)
+    const response = await fetch(blobUrl, {
+      method: "GET",
+      cache: "no-cache",
+      credentials: "same-origin",
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Fetch failed: ${response.status} ${response.statusText}`
+      );
+    }
+
     const blob = await response.blob();
+    console.log(
+      "✅ Successfully fetched blob:",
+      blob.type,
+      `${(blob.size / 1024 / 1024).toFixed(2)}MB`
+    );
 
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
+      reader.onloadend = () => {
+        console.log("✅ Successfully converted blob to base64");
+        resolve(reader.result);
+      };
+      reader.onerror = (error) => {
+        console.error("❌ FileReader error:", error);
+        reject(error);
+      };
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.error("Error converting blob URL:", error);
-    throw error;
+    console.error("❌ Primary blob conversion failed:", error);
+
+    // Method 2: Try using XMLHttpRequest for cross-origin requests
+    try {
+      console.log("🔄 Trying XMLHttpRequest fallback...");
+      return await blobUrlToBase64WithXHR(blobUrl);
+    } catch (xhrError) {
+      console.error("❌ XMLHttpRequest fallback failed:", xhrError);
+
+      // Method 3: Try finding the corresponding video element and extracting from it
+      try {
+        console.log("🔄 Trying video element extraction fallback...");
+        return await extractBlobFromVideoElement(blobUrl);
+      } catch (videoError) {
+        console.error("❌ Video element fallback failed:", videoError);
+        throw new Error(
+          `All blob conversion methods failed. Primary: ${error.message}, XHR: ${xhrError.message}, Video: ${videoError.message}`
+        );
+      }
+    }
+  }
+}
+
+// Fallback method using XMLHttpRequest
+async function blobUrlToBase64WithXHR(blobUrl) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", blobUrl, true);
+    xhr.responseType = "blob";
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(xhr.response);
+      } else {
+        reject(new Error(`XHR failed: ${xhr.status} ${xhr.statusText}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("XHR network error"));
+    xhr.ontimeout = () => reject(new Error("XHR timeout"));
+    xhr.timeout = 30000; // 30 second timeout
+
+    xhr.send();
+  });
+}
+
+// Fallback method to extract blob from video element
+async function extractBlobFromVideoElement(blobUrl) {
+  console.log("🔍 Looking for video element with blob URL:", blobUrl);
+
+  // Find video elements that might be using this blob URL
+  const videoElements = document.querySelectorAll("video");
+  let targetVideo = null;
+
+  for (const video of videoElements) {
+    if (video.src === blobUrl || video.currentSrc === blobUrl) {
+      targetVideo = video;
+      break;
+    }
+
+    // Check source elements
+    const sources = video.querySelectorAll("source");
+    for (const source of sources) {
+      if (source.src === blobUrl) {
+        targetVideo = video;
+        break;
+      }
+    }
+    if (targetVideo) break;
+  }
+
+  if (!targetVideo) {
+    throw new Error("No video element found with matching blob URL");
+  }
+
+  console.log("✅ Found matching video element, attempting canvas capture...");
+
+  // Create canvas and capture current frame
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = targetVideo.videoWidth || targetVideo.clientWidth || 640;
+  canvas.height = targetVideo.videoHeight || targetVideo.clientHeight || 480;
+
+  try {
+    ctx.drawImage(targetVideo, 0, 0, canvas.width, canvas.height);
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Canvas to blob conversion failed"));
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          console.log("✅ Successfully extracted frame as base64");
+          resolve(reader.result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }, "image/png");
+    });
+  } catch (canvasError) {
+    throw new Error(`Canvas capture failed: ${canvasError.message}`);
   }
 }
 

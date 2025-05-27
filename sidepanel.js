@@ -92,25 +92,43 @@ async function initSidePanel() {
   try {
     console.log("Initializing side panel...");
 
+    // Show initial status
+    showStatusMessage("Initializing...", "scanning");
+
+    // Set up event listeners first
+    setupEventListeners();
+
     // Load videos when panel opens
     await loadVideos();
 
-    // Set up event listeners
-    setupEventListeners();
+    // Auto-refresh videos periodically with debouncing
+    let refreshTimeout;
+    const debouncedRefresh = () => {
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(async () => {
+        await loadVideos();
+      }, 2000); // Wait 2 seconds before refreshing
+    };
 
-    // Auto-refresh videos periodically
-    setInterval(async () => {
-      await loadVideos();
-    }, 5000); // Refresh every 5 seconds
+    setInterval(debouncedRefresh, 5000); // Check every 5 seconds but debounce
+
+    console.log("Side panel initialization complete");
   } catch (error) {
     console.error("Failed to initialize side panel:", error);
-    showNotification("Failed to initialize", "error");
+    showStatusMessage("Failed to initialize", "error");
   }
 }
 
 // Load videos function
 async function loadVideos() {
   try {
+    // Show scanning indicator
+    const scanningIndicator = document.getElementById("scanningIndicator");
+    if (scanningIndicator) {
+      scanningIndicator.style.display = "flex";
+    }
+    showStatusMessage("Scanning for videos...", "scanning");
+
     // Get the active tab
     const [tab] = await chrome.tabs.query({
       active: true,
@@ -119,6 +137,7 @@ async function loadVideos() {
 
     if (!tab) {
       console.log("No active tab found");
+      showStatusMessage("No active tab found", "error");
       return;
     }
 
@@ -208,10 +227,10 @@ async function loadVideos() {
 
       if (response?.videos) {
         console.log(`Found ${response.videos.length} videos`);
-        displayVideos(response.videos);
+        debouncedUpdateVideoDisplay(response.videos);
       } else {
         console.log("No videos found in response");
-        displayNoVideosMessage();
+        debouncedUpdateVideoDisplay([]);
       }
     } catch (innerError) {
       console.error("Error communicating with content script:", innerError);
@@ -237,37 +256,42 @@ async function loadVideos() {
 
 // Display videos in the UI
 function displayVideos(videos) {
-  const container = document.getElementById("videos-container");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  if (videos.length === 0) {
-    displayNoVideosMessage();
-    return;
-  }
-
-  videos.forEach((video, index) => {
-    const videoElement = createVideoElement(video, index);
-    container.appendChild(videoElement);
-  });
+  updateVideoDisplay(videos);
 }
 
-// Create video element
+// Create video element with proper structure for the HTML
 function createVideoElement(video, index) {
   const div = document.createElement("div");
   div.className = "video-item";
+
+  // Create video thumbnail or placeholder
+  const thumbnail =
+    video.thumbnail ||
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M8 5v14l11-7z'/%3E%3C/svg%3E";
+
   div.innerHTML = `
-    <div class="video-info">
-      <h3>${video.title || "Video " + (index + 1)}</h3>
-      <p class="video-url">${video.url}</p>
-      <p class="video-details">
-        ${video.quality || "Unknown quality"} • ${video.size || "Unknown size"}
-      </p>
+    <div class="video-thumbnail">
+      <img src="${thumbnail}" alt="Video thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+      <div class="video-play-icon" style="display: none;">▶</div>
     </div>
-    <button class="download-btn" data-video='${JSON.stringify(video)}'>
-      Download
-    </button>
+    <div class="video-info">
+      <div class="video-title">${video.title || `Video ${index + 1}`}</div>
+      <div class="video-meta">
+        <span class="resolution">${video.quality || "Unknown"}</span>
+        <span class="size">${video.size || "Unknown size"}</span>
+      </div>
+      <div class="video-actions">
+        <button class="btn download-btn" data-video='${JSON.stringify(video)}'>
+          📥 Download
+        </button>
+      </div>
+      <div class="video-progress" style="display: none;">
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="progress-text">Downloading...</div>
+      </div>
+    </div>
   `;
 
   return div;
@@ -275,42 +299,44 @@ function createVideoElement(video, index) {
 
 // Display no videos message
 function displayNoVideosMessage() {
-  const container = document.getElementById("videos-container");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="no-videos">
-      <p>No videos detected on this page.</p>
-      <button id="force-scan-btn">Force Scan</button>
-    </div>
-  `;
+  updateVideoDisplay([]); // This will show the empty state
 }
 
 // Display error message with custom text
 function displayErrorMessage(customMessage) {
-  const container = document.getElementById("videos-container");
-  if (!container) return;
+  const emptyState = document.getElementById("emptyState");
+  const videoList = document.getElementById("videoList");
+  const videoCount = document.getElementById("videoCount");
 
-  container.innerHTML = `
-    <div class="error-message">
+  if (videoCount) videoCount.style.display = "none";
+  if (videoList) videoList.innerHTML = "";
+
+  if (emptyState) {
+    emptyState.innerHTML = `
+      <div class="icon">⚠️</div>
+      <h3>Connection Error</h3>
       <p>${
         customMessage ||
         "Failed to load videos. Please refresh the page and try again."
       }</p>
-      <button id="retry-btn">Retry</button>
-    </div>
-  `;
+      <button class="btn" id="retry-btn">🔄 Retry</button>
+    `;
+    emptyState.style.display = "block";
+  }
+
+  showStatusMessage(customMessage || "Error occurred", "error");
 }
 
 // Set up event listeners
 function setupEventListeners() {
-  // Download button click handler
+  // Download button click handler (for dynamically created buttons)
   document.addEventListener("click", async (e) => {
     if (e.target.classList.contains("download-btn")) {
       const video = JSON.parse(e.target.dataset.video);
-      await handleDownload(video);
+      await handleDownload(video, e.target);
     }
 
+    // Handle retry buttons in error states
     if (e.target.id === "force-scan-btn") {
       await forceScan();
     }
@@ -320,19 +346,69 @@ function setupEventListeners() {
     }
   });
 
-  // Refresh button
-  const refreshBtn = document.getElementById("refresh-btn");
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", async () => {
+  // Rescan button (matches HTML ID: rescanBtn)
+  const rescanBtn = document.getElementById("rescanBtn");
+  if (rescanBtn) {
+    rescanBtn.addEventListener("click", async () => {
+      console.log("Rescan button clicked");
+      showStatusMessage("Rescanning for videos...", "scanning");
       await loadVideos();
+    });
+  }
+
+  // Force reload button (matches HTML ID: forceReloadBtn)
+  const forceReloadBtn = document.getElementById("forceReloadBtn");
+  if (forceReloadBtn) {
+    forceReloadBtn.addEventListener("click", async () => {
+      console.log("Force reload button clicked");
+      showStatusMessage("Force scanning...", "scanning");
+      await forceScan();
+    });
+  }
+
+  // Clear button (matches HTML ID: clearBtn)
+  const clearBtn = document.getElementById("clearBtn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      console.log("Clear button clicked");
+      clearVideoList();
+      showStatusMessage("Video list cleared", "success");
+    });
+  }
+
+  // Debug button (matches HTML ID: debugBtn)
+  const debugBtn = document.getElementById("debugBtn");
+  if (debugBtn) {
+    debugBtn.addEventListener("click", async () => {
+      console.log("Debug button clicked");
+      await toggleDebugPanel();
     });
   }
 }
 
-// Handle download
-async function handleDownload(video) {
+// Handle download with progress tracking
+async function handleDownload(video, downloadButton = null) {
+  console.log("Starting download for video:", video);
+
+  // Find the progress container for this video
+  const videoItem = downloadButton?.closest(".video-item");
+  const progressContainer = videoItem?.querySelector(".video-progress");
+  const progressFill = videoItem?.querySelector(".progress-fill");
+  const progressText = videoItem?.querySelector(".progress-text");
+
   try {
-    console.log("Starting download for video:", video);
+    // Show progress container
+    if (progressContainer) {
+      progressContainer.style.display = "block";
+      progressContainer.classList.add("show");
+    }
+    if (progressText) {
+      progressText.textContent = "Initializing download...";
+    }
+    if (downloadButton) {
+      downloadButton.disabled = true;
+      downloadButton.textContent = "⏳ Downloading...";
+    }
 
     // Get the active tab
     const [tab] = await chrome.tabs.query({
@@ -342,6 +418,10 @@ async function handleDownload(video) {
 
     if (!tab) {
       throw new Error("No active tab found");
+    }
+
+    if (progressText) {
+      progressText.textContent = "Connecting to page...";
     }
 
     // Ensure content script is loaded with retry logic
@@ -360,6 +440,9 @@ async function handleDownload(video) {
         }
       } catch (pingError) {
         console.log("Content script not responding for download, injecting...");
+        if (progressText) {
+          progressText.textContent = "Loading download script...";
+        }
 
         try {
           // Inject content script if not loaded
@@ -395,6 +478,13 @@ async function handleDownload(video) {
       );
     }
 
+    if (progressText) {
+      progressText.textContent = "Starting download...";
+    }
+    if (progressFill) {
+      progressFill.style.width = "20%";
+    }
+
     // Generate filename using the utility functions defined above
     const filename =
       sanitizeFilename(video.title || "video") + getExtensionFromUrl(video.url);
@@ -407,13 +497,56 @@ async function handleDownload(video) {
     });
 
     if (response?.success) {
+      if (progressFill) {
+        progressFill.style.width = "100%";
+      }
+      if (progressText) {
+        progressText.textContent = "Download completed!";
+      }
       showNotification("Download started successfully", "success");
+
+      // Hide progress after 3 seconds
+      setTimeout(() => {
+        if (progressContainer) {
+          progressContainer.style.display = "none";
+          progressContainer.classList.remove("show");
+        }
+        if (downloadButton) {
+          downloadButton.disabled = false;
+          downloadButton.textContent = "📥 Download";
+        }
+      }, 3000);
     } else {
       throw new Error(response?.error || "Download failed");
     }
   } catch (error) {
     console.error("Download error:", error);
+
+    // Show error in progress
+    if (progressText) {
+      progressText.textContent = `Error: ${error.message}`;
+    }
+    if (progressFill) {
+      progressFill.style.width = "0%";
+      progressFill.style.background = "#dc3545";
+    }
+
     showNotification(`Download failed: ${error.message}`, "error");
+
+    // Hide progress and reset button after 5 seconds
+    setTimeout(() => {
+      if (progressContainer) {
+        progressContainer.style.display = "none";
+        progressContainer.classList.remove("show");
+      }
+      if (downloadButton) {
+        downloadButton.disabled = false;
+        downloadButton.textContent = "📥 Download";
+      }
+      if (progressFill) {
+        progressFill.style.background = "#28a745";
+      }
+    }, 5000);
   }
 }
 
@@ -489,14 +622,187 @@ async function forceScan() {
     });
 
     if (response?.videos) {
-      displayVideos(response.videos);
-      showNotification(`Found ${response.videos.length} videos`, "success");
+      updateVideoDisplay(response.videos);
+      showStatusMessage(`Found ${response.videos.length} videos`, "success");
     } else {
-      showNotification("No videos found", "warning");
+      updateVideoDisplay([]);
+      showStatusMessage("No videos found", "warning");
     }
   } catch (error) {
     console.error("Force scan error:", error);
     showNotification("Scan failed", "error");
+  }
+}
+
+// Status message functions
+function showStatusMessage(message, type = "info") {
+  const statusElement = document.getElementById("statusMessage");
+  const statusDot = document.getElementById("statusDot");
+  const statusText = document.getElementById("statusText");
+
+  if (statusElement) {
+    statusElement.textContent = message;
+    statusElement.className = `status show ${type}`;
+
+    // Hide after 3 seconds unless it's scanning
+    if (type !== "scanning") {
+      setTimeout(() => {
+        statusElement.classList.remove("show");
+      }, 3000);
+    }
+  }
+
+  // Update status indicator
+  if (statusDot && statusText) {
+    statusText.textContent = message;
+    statusDot.style.backgroundColor =
+      type === "error"
+        ? "#dc3545"
+        : type === "success"
+        ? "#28a745"
+        : type === "scanning"
+        ? "#ffc107"
+        : "#28a745";
+  }
+
+  console.log(`Status: ${message} (${type})`);
+}
+
+function hideStatusMessage() {
+  const statusElement = document.getElementById("statusMessage");
+  if (statusElement) {
+    statusElement.classList.remove("show");
+  }
+}
+
+// Clear video list function
+function clearVideoList() {
+  const videoList = document.getElementById("videoList");
+  const videoCount = document.getElementById("videoCount");
+  const emptyState = document.getElementById("emptyState");
+
+  if (videoList) {
+    videoList.innerHTML = "";
+  }
+
+  if (videoCount) {
+    videoCount.style.display = "none";
+  }
+
+  if (emptyState) {
+    emptyState.style.display = "block";
+  }
+}
+
+// Debug panel toggle function
+async function toggleDebugPanel() {
+  const debugPanel = document.getElementById("debugPanel");
+  const debugContent = document.getElementById("debugContent");
+
+  if (!debugPanel || !debugContent) return;
+
+  if (debugPanel.style.display === "none" || !debugPanel.style.display) {
+    // Show debug panel and load debug info
+    debugPanel.style.display = "block";
+    debugContent.textContent = "Loading debug information...";
+
+    try {
+      // Get current tab info
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+
+      // Try to get content script status
+      let contentScriptStatus = "Not connected";
+      try {
+        const pingResponse = await chrome.tabs.sendMessage(tab.id, {
+          action: "ping",
+        });
+        contentScriptStatus = pingResponse?.success
+          ? "Connected"
+          : "Error response";
+      } catch (e) {
+        contentScriptStatus = `Error: ${e.message}`;
+      }
+
+      // Get storage info
+      const storage = await chrome.storage.local.get();
+
+      const debugInfo = {
+        timestamp: new Date().toISOString(),
+        currentTab: {
+          id: tab?.id,
+          url: tab?.url,
+          title: tab?.title?.substring(0, 50) + "...",
+        },
+        contentScriptStatus,
+        extensionStorage: storage,
+        userAgent: navigator.userAgent,
+        extensionVersion: chrome.runtime.getManifest().version,
+      };
+
+      debugContent.textContent = JSON.stringify(debugInfo, null, 2);
+    } catch (error) {
+      debugContent.textContent = `Debug error: ${error.message}`;
+    }
+  } else {
+    // Hide debug panel
+    debugPanel.style.display = "none";
+  }
+}
+
+// Debounced video display update to prevent flashing
+let displayUpdateTimeout;
+function debouncedUpdateVideoDisplay(videos) {
+  clearTimeout(displayUpdateTimeout);
+  displayUpdateTimeout = setTimeout(() => {
+    updateVideoDisplay(videos);
+  }, 300); // Wait 300ms before updating
+}
+
+// Update display functions to match the HTML structure
+function updateVideoDisplay(videos) {
+  const videoList = document.getElementById("videoList");
+  const videoCount = document.getElementById("videoCount");
+  const emptyState = document.getElementById("emptyState");
+  const scanningIndicator = document.getElementById("scanningIndicator");
+
+  // Hide scanning indicator
+  if (scanningIndicator) {
+    scanningIndicator.style.display = "none";
+  }
+
+  if (!videoList) return;
+
+  if (videos && videos.length > 0) {
+    // Show videos
+    if (emptyState) emptyState.style.display = "none";
+    if (videoCount) {
+      videoCount.style.display = "block";
+      videoCount.textContent = `${videos.length} video${
+        videos.length === 1 ? "" : "s"
+      } found`;
+    }
+
+    videoList.innerHTML = "";
+    videos.forEach((video, index) => {
+      const videoElement = createVideoElement(video, index);
+      videoList.appendChild(videoElement);
+    });
+
+    hideStatusMessage();
+    showStatusMessage(
+      `Found ${videos.length} video${videos.length === 1 ? "" : "s"}`,
+      "success"
+    );
+  } else {
+    // Show empty state
+    if (emptyState) emptyState.style.display = "block";
+    if (videoCount) videoCount.style.display = "none";
+    videoList.innerHTML = "";
+
+    showStatusMessage("No videos found on this page", "info");
   }
 }
 

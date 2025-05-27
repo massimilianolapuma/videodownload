@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Downloader - Button Functionality Test</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        line-height: 1.6;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      .test-section {
+        background: white;
+        padding: 25px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e9ecef;
+      }
+      .video-container {
+        margin: 20px 0;
+        text-align: center;
+      }
+      video {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      .button-test {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+        border-left: 4px solid #28a745;
+      }
+      .button-test h4 {
+        margin: 0 0 8px 0;
+        color: #28a745;
+        font-size: 16px;
+      }
+      .button-test p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+      }
+      .status {
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 6px;
+        font-weight: 500;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      .warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+      .instructions {
+        background: linear-gradient(135deg, #ffeaa7 0%, #f1c40f 100%);
+        color: #856404;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border: 1px solid #f39c12;
+      }
+      .code {
+        background-color: #f8f9fa;
+        padding: 12px;
+        border-radius: 6px;
+        font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+        margin: 10px 0;
+        border: 1px solid #dee2e6;
+        font-size: 13px;
+      }
+      .step {
+        display: flex;
+        align-items: flex-start;
+        margin: 15px 0;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 3px solid #007bff;
+      }
+      .step-number {
+        background: #007bff;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 12px;
+        flex-shrink: 0;
+        font-size: 12px;
+      }
+      .expected-results {
+        background: #e8f5e8;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #a5d6a7;
+        margin: 15px 0;
+      }
+      .checklist {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+      }
+      .checklist input[type="checkbox"] {
+        margin-right: 8px;
+        transform: scale(1.2);
+      }
+      .checklist label {
+        display: block;
+        margin: 8px 0;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+      .checklist label:hover {
+        background-color: #f8f9fa;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🎬 Video Downloader Extension</h1>
+      <h2>Button Functionality Test</h2>
+      <p>Verify that all side panel buttons work correctly after the fixes</p>
+    </div>
+
+    <div class="instructions">
+      <h3>🧪 Testing Procedure:</h3>
+      <div class="step">
+        <div class="step-number">1</div>
+        <div>
+          <strong>Load Extension:</strong> Install the latest build (v1.0.11)
+          from the <code>build/</code> folder in Chrome
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div>
+          <strong>Open Side Panel:</strong> Navigate to chrome://extensions,
+          find Video Downloader, click "Extension options" or use the extension
+          icon
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div>
+          <strong>Test Each Button:</strong> Systematically test each button in
+          the side panel using the checklist below
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <div>
+          <strong>Verify Behavior:</strong> Ensure buttons respond correctly and
+          show appropriate feedback
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>📺 Test Videos for Detection</h3>
+
+      <div class="video-container">
+        <h4>Sample Video 1 - MP4 Format</h4>
+        <video controls width="400" height="225" title="Button Test Video 1">
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            type="video/mp4"
+          />
+          <source
+            src="https://sample-videos.com/zip/10/mp4/SampleVideo_640x360_1mb.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <p>
+          <em
+            >This should be detected as "Button Test Video 1" or "Big Buck
+            Bunny"</em
+          >
+        </p>
+      </div>
+
+      <div class="video-container">
+        <h4>Sample Video 2 - WebM Format</h4>
+        <video controls width="400" height="225" title="Button Test Video 2">
+          <source
+            src="https://sample-videos.com/zip/10/webm/SampleVideo_640x360_1mb.webm"
+            type="video/webm"
+          />
+          <source
+            src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <p><em>This should be detected as "Button Test Video 2"</em></p>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🔘 Button Functionality Checklist</h3>
+
+      <div class="checklist">
+        <h4>Main Control Buttons:</h4>
+
+        <label>
+          <input type="checkbox" id="rescan-btn" />
+          <strong>🔄 Rescan Button</strong> - Initiates a new video scan
+        </label>
+        <div class="button-test">
+          <h4>Expected Behavior:</h4>
+          <p>• Shows "Rescanning for videos..." status message</p>
+          <p>• Scanning indicator appears</p>
+          <p>• Video list refreshes</p>
+          <p>• Status updates to show number of videos found</p>
+        </div>
+
+        <label>
+          <input type="checkbox" id="force-reload-btn" />
+          <strong>⚡ Force Reload Button</strong> - Forces a complete rescan
+        </label>
+        <div class="button-test">
+          <h4>Expected Behavior:</h4>
+          <p>• Shows "Force scanning..." status message</p>
+          <p>• Clears existing video cache</p>
+          <p>• Performs deep scan of the page</p>
+          <p>• Updates video list with fresh results</p>
+        </div>
+
+        <label>
+          <input type="checkbox" id="clear-btn" />
+          <strong>🗑️ Clear Button</strong> - Clears the video list
+        </label>
+        <div class="button-test">
+          <h4>Expected Behavior:</h4>
+          <p>• Video list becomes empty</p>
+          <p>• Shows "Video list cleared" status message</p>
+          <p>• Empty state message appears</p>
+          <p>• Video count resets</p>
+        </div>
+
+        <label>
+          <input type="checkbox" id="debug-btn" />
+          <strong>🔍 Debug Button</strong> - Toggles debug information panel
+        </label>
+        <div class="button-test">
+          <h4>Expected Behavior:</h4>
+          <p>• Debug panel slides down/up</p>
+          <p>• Shows extension status information</p>
+          <p>• Displays current tab details</p>
+          <p>• Shows content script connection status</p>
+        </div>
+
+        <h4 style="margin-top: 25px">Video Action Buttons:</h4>
+
+        <label>
+          <input type="checkbox" id="download-btn" />
+          <strong>📥 Download Button</strong> - Downloads individual videos
+        </label>
+        <div class="button-test">
+          <h4>Expected Behavior:</h4>
+          <p>• Shows download progress</p>
+          <p>• Triggers browser download</p>
+          <p>• Shows success/error notification</p>
+          <p>• Button state updates during download</p>
+        </div>
+
+        <h4 style="margin-top: 25px">Error State Buttons:</h4>
+
+        <label>
+          <input type="checkbox" id="retry-btn" />
+          <strong>🔄 Retry Button</strong> - Appears in error states
+        </label>
+        <div class="button-test">
+          <h4>Expected Behavior:</h4>
+          <p>• Only visible when there's an error</p>
+          <p>• Retries the failed operation</p>
+          <p>• Clears error state on success</p>
+          <p>• Shows appropriate status messages</p>
+        </div>
+
+        <label>
+          <input type="checkbox" id="force-scan-btn" />
+          <strong>🔍 Force Scan Button</strong> - Appears in no-videos state
+        </label>
+        <div class="button-test">
+          <h4>Expected Behavior:</h4>
+          <p>• Only visible when no videos are found</p>
+          <p>• Triggers force scan operation</p>
+          <p>• Shows scanning status</p>
+          <p>• Updates results after scan</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>✅ Expected Results Summary</h3>
+
+      <div class="expected-results">
+        <h4>🎯 All Buttons Should:</h4>
+        <ul>
+          <li><strong>Respond to clicks</strong> - No silent failures</li>
+          <li>
+            <strong>Show visual feedback</strong> - Status messages, loading
+            states
+          </li>
+          <li>
+            <strong>Update the UI appropriately</strong> - Correct state changes
+          </li>
+          <li>
+            <strong>Handle errors gracefully</strong> - Clear error messages
+          </li>
+          <li>
+            <strong>Maintain consistent behavior</strong> - Predictable
+            responses
+          </li>
+        </ul>
+      </div>
+
+      <div class="status info">
+        <strong>Success Criteria:</strong> All checkboxes above should be
+        checkable, indicating that each button performs its expected function
+        correctly.
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🐛 Troubleshooting Guide</h3>
+
+      <div class="status warning">
+        <strong>If buttons don't work:</strong>
+      </div>
+
+      <div class="code">
+        1. Check browser console for JavaScript errors<br />
+        2. Verify extension permissions are granted<br />
+        3. Ensure content script is loaded on the test page<br />
+        4. Try refreshing the page and reopening side panel<br />
+        5. Check that manifest.json permissions include 'scripting'
+      </div>
+
+      <div class="status error">
+        <strong>Common Issues:</strong>
+      </div>
+
+      <ul>
+        <li>
+          <strong>Button clicks do nothing:</strong> Event listeners not
+          attached
+        </li>
+        <li>
+          <strong>Status messages don't appear:</strong> HTML element IDs don't
+          match
+        </li>
+        <li>
+          <strong>Downloads fail:</strong> Content script connection issues
+        </li>
+        <li>
+          <strong>Debug panel empty:</strong> Chrome API permission problems
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h3>🔍 Debug Information</h3>
+      <div id="test-results" class="status info">
+        <strong>Test Status:</strong> Ready for testing
+      </div>
+      <div class="code">
+        <strong>Page loaded at:</strong> <span id="load-time"></span><br />
+        <strong>Videos on page:</strong> <span id="video-count">0</span><br />
+        <strong>Extension version:</strong>
+        <span id="extension-version">v1.0.11</span><br />
+        <strong>Test page URL:</strong> <span id="page-url">Loading...</span>
+      </div>
+    </div>
+
+    <script>
+      // Initialize test page
+      document.getElementById("load-time").textContent =
+        new Date().toLocaleTimeString();
+      document.getElementById("page-url").textContent = window.location.href;
+
+      // Count videos
+      const videos = document.querySelectorAll("video");
+      document.getElementById("video-count").textContent = videos.length;
+
+      // Add titles to videos for better detection
+      videos.forEach((video, index) => {
+        if (!video.title) {
+          video.title = `Button Test Video ${index + 1}`;
+        }
+      });
+
+      // Log information for debugging
+      console.log("🧪 Button Functionality Test Page Loaded");
+      console.log("📍 URL:", window.location.href);
+      console.log("📺 Videos found:", videos.length);
+      console.log("🔧 Expected extension version: v1.0.11");
+
+      // Update test status based on checkbox interactions
+      let checkedCount = 0;
+      const totalChecks = document.querySelectorAll(
+        'input[type="checkbox"]'
+      ).length;
+
+      document
+        .querySelectorAll('input[type="checkbox"]')
+        .forEach((checkbox) => {
+          checkbox.addEventListener("change", function () {
+            if (this.checked) {
+              checkedCount++;
+            } else {
+              checkedCount--;
+            }
+
+            const testResults = document.getElementById("test-results");
+            const percentage = Math.round((checkedCount / totalChecks) * 100);
+
+            if (checkedCount === 0) {
+              testResults.innerHTML =
+                "<strong>Test Status:</strong> Ready for testing";
+              testResults.className = "status info";
+            } else if (checkedCount === totalChecks) {
+              testResults.innerHTML =
+                "<strong>Test Status:</strong> All tests completed! ✅";
+              testResults.className = "status success";
+            } else {
+              testResults.innerHTML = `<strong>Test Status:</strong> ${checkedCount}/${totalChecks} tests completed (${percentage}%)`;
+              testResults.className = "status warning";
+            }
+          });
+        });
+
+      // Monitor for extension connection
+      let connectionChecks = 0;
+      const checkConnection = setInterval(() => {
+        connectionChecks++;
+        if (connectionChecks > 30) {
+          clearInterval(checkConnection);
+          return;
+        }
+
+        console.log(
+          `🔍 Connection check ${connectionChecks}: Waiting for extension...`
+        );
+      }, 1000);
+    </script>
+  </body>
+</html>
