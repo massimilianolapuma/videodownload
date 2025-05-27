@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Downloader - Fix Validation Test</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        min-height: 100vh;
+      }
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 30px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        border-left: 4px solid #4caf50;
+      }
+      .test-section h3 {
+        margin-top: 0;
+        color: #4caf50;
+      }
+      video {
+        width: 100%;
+        max-width: 500px;
+        height: auto;
+        border-radius: 10px;
+        margin: 10px 0;
+      }
+      .instructions {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 4px solid #ff9800;
+      }
+      .instructions h4 {
+        margin-top: 0;
+        color: #ff9800;
+      }
+      .status {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        font-weight: bold;
+      }
+      .success {
+        background: rgba(76, 175, 80, 0.3);
+      }
+      .warning {
+        background: rgba(255, 152, 0, 0.3);
+      }
+      .error {
+        background: rgba(244, 67, 54, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎬 Video Downloader - Fix Validation</h1>
+
+      <div class="instructions">
+        <h4>📋 Test Instructions</h4>
+        <ol>
+          <li>Install the Video Downloader extension in Chrome</li>
+          <li>Open the sidepanel (click the extension icon)</li>
+          <li>Look for detected videos in the sidepanel</li>
+          <li>
+            Verify the file sizes display correctly (no more "NaN" errors)
+          </li>
+          <li>Try downloading a video to confirm functionality</li>
+        </ol>
+      </div>
+
+      <div class="test-section">
+        <h3>🎥 Test Video 1 - MP4</h3>
+        <video controls>
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <p><strong>Expected:</strong> Should be detected by the extension</p>
+        <p><strong>File Size:</strong> Should display correctly (not "NaN")</p>
+      </div>
+
+      <div class="test-section">
+        <h3>🎬 Test Video 2 - WebM</h3>
+        <video controls>
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+        <p><strong>Expected:</strong> Should be detected by the extension</p>
+        <p><strong>File Size:</strong> Should display correctly (not "NaN")</p>
+      </div>
+
+      <div class="test-section">
+        <h3>📊 Validation Checks</h3>
+        <div id="validationResults">
+          <div class="status warning">
+            ⏳ Open the sidepanel to run validation...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Test script to validate the fixes
+      console.log("🔧 Video Downloader Fix Validation Page Loaded");
+
+      // Simulate formatFileSize function to test locally
+      function testFormatFileSize() {
+        const formatFileSize = (bytes) => {
+          const numBytes = Number(bytes);
+          if (!numBytes || numBytes === 0 || isNaN(numBytes)) return null;
+
+          const units = ["B", "KB", "MB", "GB"];
+          let size = numBytes;
+          let unitIndex = 0;
+
+          while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+          }
+
+          return `${size.toFixed(1)} ${units[unitIndex]}`;
+        };
+
+        // Test cases that would have caused the original error
+        const testCases = [
+          { input: 1048576, expected: "1.0 MB" },
+          { input: "2048", expected: "2.0 KB" },
+          { input: null, expected: null },
+          { input: undefined, expected: null },
+          { input: "", expected: null },
+          { input: "not a number", expected: null },
+        ];
+
+        let results = [];
+        testCases.forEach((test, index) => {
+          try {
+            const result = formatFileSize(test.input);
+            const passed = result === test.expected;
+            results.push({
+              test: `formatFileSize(${test.input})`,
+              result: result,
+              expected: test.expected,
+              passed: passed,
+            });
+          } catch (error) {
+            results.push({
+              test: `formatFileSize(${test.input})`,
+              result: `ERROR: ${error.message}`,
+              expected: test.expected,
+              passed: false,
+            });
+          }
+        });
+
+        return results;
+      }
+
+      // Run validation when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        const validationDiv = document.getElementById("validationResults");
+        const testResults = testFormatFileSize();
+
+        let html = "<h4>🧪 formatFileSize() Function Tests:</h4>";
+        let allPassed = true;
+
+        testResults.forEach((result) => {
+          const statusClass = result.passed ? "success" : "error";
+          const icon = result.passed ? "✅" : "❌";
+          html += `<div class="status ${statusClass}">${icon} ${result.test} = ${result.result}</div>`;
+          if (!result.passed) allPassed = false;
+        });
+
+        html += `<div class="status ${allPassed ? "success" : "error"}">
+                ${
+                  allPassed
+                    ? "🎉 All formatFileSize tests passed!"
+                    : "⚠️ Some formatFileSize tests failed"
+                }
+            </div>`;
+
+        validationDiv.innerHTML = html;
+
+        // Log to console for extension debugging
+        console.log("Video Downloader Fix Validation Results:", testResults);
+      });
+
+      // Add debugging helper for the extension
+      window.videoDownloaderDebug = {
+        testFormatFileSize: testFormatFileSize,
+        checkVideoElements: () => {
+          const videos = document.querySelectorAll("video");
+          console.log(`Found ${videos.length} video elements:`, videos);
+          return videos;
+        },
+      };
+    </script>
+  </body>
+</html>

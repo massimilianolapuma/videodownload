@@ -712,10 +712,12 @@ class VideoDownloaderSidePanel {
   }
 
   formatFileSize(bytes) {
-    if (!bytes || bytes === 0) return null;
+    // Convert to number and validate
+    const numBytes = Number(bytes);
+    if (!numBytes || numBytes === 0 || isNaN(numBytes)) return null;
 
     const units = ["B", "KB", "MB", "GB"];
-    let size = bytes;
+    let size = numBytes;
     let unitIndex = 0;
 
     while (size >= 1024 && unitIndex < units.length - 1) {
