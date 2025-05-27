@@ -5,183 +5,97 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video Downloader - Download Manager</title>
     <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body class="side-panel">
-    <!-- Header Section -->
-    <div class="header">
-      <h1>
-        <span>📊</span>
-        <span>Download Manager</span>
-      </h1>
-      <div class="status-info">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Ready</span>
-      </div>
-    </div>
+    <link rel="stylesheet" href="video-item.css" />
+    <style>
+      :root {
+        --system-blue: #0078d4;
+        --system-green: #16c60c;
+        --system-red: #e81123;
+        --system-yellow: #f6a600;
+        --system-purple: #a800b5;
+        --system-gray: #f3f3f3;
+        --system-gray6: #6f6f6f;
+        --system-gray5: #d0d0d0;
+        --system-gray4: #a0a0a0;
+        --system-gray3: #707070;
+        --system-gray2: #f9f9f9;
+        --system-gray1: #ffffff;
+        --label-primary: #333333;
+        --label-secondary: #666666;
+        --label-tertiary: #999999;
+        --label-quaternary: #cccccc;
+        --background-primary: #ffffff;
+        --background-secondary: #f9f9f9;
+        --background-tertiary: #f3f3f3;
+        --separator: #e0e0e0;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.1);
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --radius-lg: 16px;
+        --text-caption1: 12px;
+        --text-caption2: 10px;
+        --text-subhead: 14px;
+        --text-title3: 18px;
+        --spacing-xs: 4px;
+        --spacing-sm: 8px;
+        --spacing-md: 12px;
+        --spacing-lg: 16px;
+        --spacing-xl: 24px;
+        --spacing-xxl: 32px;
+      }
 
-    <!-- Controls Section -->
-    <div class="controls flex gap-2">
-      <button id="scanBtn" class="btn">
-        <span>🔍</span>
-        <span>Scan Page</span>
-      </button>
-      <button id="clearBtn" class="btn btn-secondary">
-        <span>🗑️</span>
-        <span>Clear All</span>
-      </button>
-    </div>
-
-    <!-- Statistics Section -->
-    <div class="section">
-      <div class="section-title">Statistics</div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-value" id="totalVideos">0</div>
-          <div class="stat-label">Videos Found</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="activeDownloads">0</div>
-          <div class="stat-label">Downloading</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="completedDownloads">0</div>
-          <div class="stat-label">Completed</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Active Downloads Section -->
-    <div class="section">
-      <div class="section-title">Active Downloads</div>
-      <div id="activeDownloadsList" class="downloads-list">
-        <div class="no-videos">No active downloads</div>
-      </div>
-    </div>
-
-    <!-- Available Videos Section -->
-    <div class="section">
-      <div class="section-title">Available Videos</div>
-      <div id="videosList" class="video-list">
-        <div class="no-videos">Click "Scan Page" to find downloadable videos</div>
-      </div>
-    </div>
-
-    <!-- Download History Section -->
-    <div class="section">
-      <div class="section-title">Recent Downloads</div>
-      <div id="downloadHistory" class="downloads-list">
-        <div class="no-videos">No recent downloads</div>
-      </div>
-    </div>
-
-    <div class="status" id="statusMessage"></div>
-
-    <div class="debug-panel" id="debugPanel">
-      <pre id="debugContent">
-Click Debug button to view storage contents...</pre>
-    </div>
-
-    <div class="video-count hidden" id="videoCount">
-      No videos detected
-    </div>
-
-    <div class="download-manager hidden" id="downloadManager">
-      <h3 class="section-title">📥 Active Downloads</h3>
-      <div class="download-list" id="downloadList"></div>
-    </div>
-
-    <div
-      class="scanning-indicator hidden"
-      id="scanningIndicator"
-    >
-      <div class="spinner"></div>
-      <span>Scanning for videos...</span>
-    </div>
-
-    <div class="empty-state" id="emptyState">
-      <div class="icon">📹</div>
-      <h3>No Videos Found</h3>
-      <p>
-        Click the extension icon on a webpage with videos to start detecting
-        downloadable content.
-      </p>
-    </div>
-
-    <div class="video-list" id="videoList"></div>
-
-    <script src="sidepanel.js"></script>
-  </body>
-</html>
-
-    <script src="sidepanel.js"></script>
-  </body>
-</html>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--background-primary);
         color: var(--label-primary);
+        line-height: 1.5;
+      }
+
+      /* Header styles */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--spacing-md);
+        background: var(--background-secondary);
+        border-bottom: 0.5px solid var(--separator);
+      }
+
+      .header h1 {
+        font-size: var(--text-title3);
+        margin: 0;
         display: flex;
         align-items: center;
-        gap: var(--spacing-sm);
-        letter-spacing: -0.4px;
+        gap: 8px;
       }
 
-      .status-info {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs);
-        font-size: var(--text-caption1);
-        color: var(--label-secondary);
-        font-weight: 500;
+      .header h1 span {
+        display: inline-block;
+        font-size: 1.5rem;
       }
 
-      .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: var(--system-green);
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-
-      .status-dot.scanning {
-        background-color: var(--system-orange);
-      }
-
-      .status-dot.error {
-        background-color: var(--system-red);
-        animation: none;
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.6;
-        }
-      }
-
-      .controls {
-        display: flex;
-        gap: var(--spacing-sm);
-        margin-bottom: var(--spacing-md);
-      }
-
+      /* Button styles */
       .btn {
         padding: var(--spacing-sm) var(--spacing-md);
-        border: none;
-        border-radius: var(--radius-sm);
         background: var(--system-blue);
         color: white;
+        border: none;
+        border-radius: var(--radius-sm);
         cursor: pointer;
         font-size: var(--text-subhead);
         font-weight: 600;
         font-family: inherit;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        min-height: 44px; /* Apple's minimum touch target */
+        min-height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
-        position: relative;
-        overflow: hidden;
+        gap: var(--spacing-xs);
       }
 
       .btn:hover {
@@ -195,349 +109,33 @@ Click Debug button to view storage contents...</pre>
         box-shadow: var(--shadow-sm);
       }
 
-      .btn:disabled {
-        background: var(--system-gray3);
-        color: var(--label-quaternary);
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-      }
-
       .btn.secondary {
-        background: var(--fill-tertiary);
-        color: var(--system-blue);
-        border: 0.5px solid var(--separator);
+        background: var(--system-gray);
+        color: var(--label-primary);
       }
 
       .btn.secondary:hover {
-        background: var(--fill-secondary);
-        color: var(--system-blue-hover);
+        background: var(--system-gray-hover);
       }
 
+      /* Status message styles */
       .status {
         padding: var(--spacing-md);
         border-radius: var(--radius-md);
-        margin-bottom: var(--spacing-md);
-        font-size: var(--text-subhead);
-        font-weight: 500;
-        text-align: center;
-        display: none;
-        border: 0.5px solid transparent;
-      }
-
-      .status.show {
-        display: block;
-        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(-8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .status.scanning {
-        background: color-mix(in srgb, var(--system-blue) 10%, transparent);
-        color: var(--system-blue);
-        border-color: color-mix(in srgb, var(--system-blue) 20%, transparent);
-      }
-
-      .status.success {
-        background: color-mix(in srgb, var(--system-green) 10%, transparent);
-        color: var(--system-green);
-        border-color: color-mix(in srgb, var(--system-green) 20%, transparent);
-      }
-
-      .status.error {
-        background: color-mix(in srgb, var(--system-red) 10%, transparent);
-        color: var(--system-red);
-        border-color: color-mix(in srgb, var(--system-red) 20%, transparent);
-      }
-
-      .video-count {
-        font-size: var(--text-subhead);
-        font-weight: 500;
-        color: var(--label-secondary);
-        margin-bottom: var(--spacing-md);
-        padding: var(--spacing-md);
-        background: var(--background-tertiary);
-        border-radius: var(--radius-md);
-        text-align: center;
-        border: 0.5px solid var(--separator);
-      }
-
-      .video-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-md);
-      }
-
-      .video-item {
-        background: var(--background-primary);
-        border: 0.5px solid var(--separator);
-        border-radius: var(--radius-md);
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .video-item:hover {
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
-        border-color: color-mix(
-          in srgb,
-          var(--system-blue) 30%,
-          var(--separator)
-        );
-      }
-
-      .video-preview {
-        width: 100%;
-        height: 100px;
-        background: var(--system-gray6);
-        position: relative;
-        overflow: hidden;
-      }
-
-      .video-preview img,
-      .video-preview video {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .video-preview .placeholder {
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-          135deg,
-          var(--system-purple) 0%,
-          var(--system-blue) 100%
-        );
+        margin: var(--spacing-md) 0;
         display: flex;
         align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 32px;
-      }
-
-      .play-overlay {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(8px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: var(--text-body);
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-      }
-
-      .play-overlay:hover {
-        background: rgba(0, 0, 0, 0.9);
-        transform: translate(-50%, -50%) scale(1.1);
-      }
-
-      .video-info {
-        padding: var(--spacing-md);
-      }
-
-      .video-title {
-        font-weight: 600;
-        font-size: var(--text-subhead);
-        color: var(--label-primary);
-        margin-bottom: var(--spacing-sm);
-        line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        letter-spacing: -0.2px;
-      }
-
-      .video-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--spacing-xs);
-        margin-bottom: var(--spacing-md);
-        font-size: var(--text-caption1);
-      }
-
-      .video-meta .badge {
-        padding: 4px var(--spacing-sm);
-        border-radius: var(--radius-sm);
-        font-weight: 600;
-        font-size: var(--text-caption2);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      .video-meta .resolution {
-        background: color-mix(in srgb, var(--system-blue) 15%, transparent);
-        color: var(--system-blue);
-      }
-
-      .video-meta .size {
-        background: color-mix(in srgb, var(--system-purple) 15%, transparent);
-        color: var(--system-purple);
-      }
-
-      .video-meta .duration {
-        background: color-mix(in srgb, var(--system-green) 15%, transparent);
-        color: var(--system-green);
-      }
-
-      .video-actions {
-        display: flex;
         gap: var(--spacing-sm);
-        align-items: center;
       }
 
-      .quality-select {
-        flex: 1;
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 0.5px solid var(--separator);
-        border-radius: var(--radius-sm);
-        font-size: var(--text-subhead);
-        background: var(--background-tertiary);
-        color: var(--label-primary);
-        font-family: inherit;
-        min-height: 44px;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .quality-select:focus {
-        outline: none;
-        border-color: var(--system-blue);
-        box-shadow: 0 0 0 3px
-          color-mix(in srgb, var(--system-blue) 20%, transparent);
-      }
-
-      .download-btn {
-        padding: var(--spacing-sm) var(--spacing-md);
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
         background: var(--system-green);
-        color: white;
-        border: none;
-        border-radius: var(--radius-sm);
-        cursor: pointer;
-        font-size: var(--text-subhead);
-        font-weight: 600;
-        font-family: inherit;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        min-height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--spacing-xs);
       }
 
-      .download-btn:hover {
-        background: var(--system-green-hover);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
-      }
-
-      .download-btn:active {
-        transform: translateY(0);
-        box-shadow: var(--shadow-sm);
-      }
-
-      .download-btn:disabled {
-        background: var(--system-gray3);
-        color: var(--label-quaternary);
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-      }
-
-      .progress-container {
-        margin-top: var(--spacing-md);
-        display: none;
-      }
-
-      .progress-container.show {
-        display: block;
-        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .progress-bar {
-        width: 100%;
-        height: 6px;
-        background: var(--system-gray5);
-        border-radius: 3px;
-        overflow: hidden;
-      }
-
-      .progress-fill {
-        height: 100%;
-        background: var(--system-green);
-        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        width: 0%;
-        border-radius: 3px;
-      }
-
-      .progress-text {
-        font-size: var(--text-caption1);
-        color: var(--label-secondary);
-        margin-top: var(--spacing-xs);
-        text-align: center;
-        font-weight: 500;
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: var(--spacing-xxl) var(--spacing-lg);
-        color: var(--label-secondary);
-        animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .empty-state .icon {
-        font-size: 64px;
-        margin-bottom: var(--spacing-lg);
-        opacity: 0.6;
-        filter: grayscale(0.3);
-      }
-
-      .empty-state h3 {
-        margin: 0 0 var(--spacing-sm) 0;
-        font-size: var(--text-title3);
-        color: var(--label-primary);
-        font-weight: 600;
-        letter-spacing: -0.4px;
-      }
-
-      .empty-state p {
-        margin: 0;
-        font-size: var(--text-subhead);
-        line-height: 1.5;
-        max-width: 280px;
-        margin: 0 auto;
-      }
-
+      /* Scanning indicator styles */
       .scanning-indicator {
         display: flex;
         align-items: center;
@@ -546,34 +144,6 @@ Click Debug button to view storage contents...</pre>
         gap: var(--spacing-md);
         color: var(--label-secondary);
         animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .debug-panel {
-        background: var(--background-tertiary);
-        border: 0.5px solid var(--separator);
-        border-radius: var(--radius-md);
-        padding: var(--spacing-md);
-        margin-bottom: var(--spacing-md);
-        font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono",
-          monospace;
-        font-size: var(--text-caption1);
-        display: none;
-        max-height: 200px;
-        overflow-y: auto;
-        box-shadow: var(--shadow-sm);
-      }
-
-      .debug-panel.show {
-        display: block;
-        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .debug-panel pre {
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-all;
-        color: var(--label-secondary);
-        line-height: 1.5;
       }
 
       .spinner {
@@ -594,13 +164,263 @@ Click Debug button to view storage contents...</pre>
         }
       }
 
-      .download-manager {
+      /* Enhanced video item styles based on reference design */
+      .video-item {
         background: var(--background-primary);
-        border: 0.5px solid var(--separator);
+        border: 1px solid var(--separator);
         border-radius: var(--radius-md);
-        margin-bottom: var(--spacing-md);
         overflow: hidden;
         box-shadow: var(--shadow-sm);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        height: 5rem;
+        margin-bottom: var(--spacing-sm);
+        position: relative;
+      }
+
+      .video-item:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+        border-color: color-mix(
+          in srgb,
+          var(--system-blue) 30%,
+          var(--separator)
+        );
+      }
+
+      /* Left part with video thumbnail/preview */
+      .video-left {
+        min-width: 5.8rem;
+        position: relative;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-color: var(--system-gray6);
+        user-select: none;
+      }
+
+      .video-favicon {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        bottom: 4px;
+        left: 4px;
+        background-size: cover;
+        background-color: white;
+        border-radius: 3px;
+        z-index: 1;
+      }
+
+      .video-placeholder {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: white;
+      }
+
+      /* Right part with video info and actions */
+      .video-right {
+        flex: 1;
+        padding: var(--spacing-xs);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+      }
+
+      .video-top {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        position: relative;
+      }
+
+      .video-tags {
+        display: flex;
+        gap: var(--spacing-xs);
+        flex-shrink: 0;
+      }
+
+      .video-tag {
+        font-size: 8px;
+        height: 16px;
+        padding: 0 4px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      .format-tag {
+        background: color-mix(in srgb, var(--system-blue) 15%, transparent);
+        color: var(--system-blue);
+      }
+
+      .type-tag {
+        background: color-mix(in srgb, var(--system-green) 15%, transparent);
+        color: var(--system-green);
+        display: flex;
+        gap: 2px;
+      }
+
+      .type-tag .icon {
+        font-size: 10px;
+      }
+
+      .video-title {
+        flex: 1;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 600;
+        font-size: var(--text-caption1);
+        color: var(--label-primary);
+        text-transform: uppercase;
+        font-style: italic;
+      }
+
+      .video-size {
+        color: var(--label-tertiary);
+        font-size: var(--text-caption2);
+        margin-right: var(--spacing-xs);
+      }
+
+      .btn-hide {
+        background: none;
+        border: none;
+        color: var(--label-tertiary);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-hide:hover {
+        color: var(--label-primary);
+      }
+
+      /* Bottom part with download controls */
+      .video-bottom {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+      }
+
+      .video-format-select {
+        flex: 1;
+      }
+
+      .format-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+        border: 0.5px solid var(--separator);
+        border-radius: var(--radius-sm);
+        padding: 2px var(--spacing-xs);
+        background: var(--background-secondary);
+        font-size: var(--text-caption2);
+        cursor: pointer;
+      }
+
+      .format-container {
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+
+      .format-quality {
+        padding: 0 var(--spacing-xs);
+        height: 14px;
+        line-height: 14px;
+        border-radius: var(--radius-xs);
+        font-size: 8px;
+        background-color: var(--system-gray6);
+        color: var(--label-secondary);
+        border: 0.5px solid var(--separator);
+      }
+
+      .btn-download {
+        min-width: 28px;
+        height: 28px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--system-blue);
+        color: white;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .btn-download:hover {
+        background: color-mix(in srgb, var(--system-blue) 90%, black);
+      }
+
+      .video-progress-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--background-tertiary);
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--system-blue);
+        width: 0%;
+        transition: width 0.3s ease-in-out;
+      }
+
+      /* Style for specific quality indicators */
+      .format-quality._1080p,
+      .format-quality._1440p,
+      .format-quality._2160p,
+      .format-quality._4k,
+      .format-quality._4K {
+        background-color: color-mix(
+          in srgb,
+          var(--system-green) 15%,
+          transparent
+        );
+        color: var(--system-green);
+        border-color: color-mix(in srgb, var(--system-green) 30%, transparent);
+      }
+
+      .format-quality._720p {
+        background-color: color-mix(
+          in srgb,
+          var(--system-blue) 15%,
+          transparent
+        );
+        color: var(--system-blue);
+        border-color: color-mix(in srgb, var(--system-blue) 30%, transparent);
+      }
+
+      .format-quality._480p,
+      .format-quality._360p,
+      .format-quality._240p {
+        background-color: color-mix(
+          in srgb,
+          var(--system-orange) 15%,
+          transparent
+        );
+        color: var(--system-orange);
+        border-color: color-mix(in srgb, var(--system-orange) 30%, transparent);
+      }
+
+      /* Statistics Section */
+      .section {
+        margin: var(--spacing-md) 0;
       }
 
       .section-title {
@@ -614,8 +434,37 @@ Click Debug button to view storage contents...</pre>
         letter-spacing: -0.2px;
       }
 
-      .download-list {
-        padding: var(--spacing-sm);
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-md);
+      }
+
+      .stat-item {
+        background: var(--background-tertiary);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .stat-value {
+        font-size: var(--text-title3);
+        font-weight: 700;
+        color: var(--label-primary);
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .stat-label {
+        font-size: var(--text-caption1);
+        color: var(--label-secondary);
+      }
+
+      /* Downloads list styles */
+      .downloads-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
       }
 
       .download-item {
@@ -726,45 +575,171 @@ Click Debug button to view storage contents...</pre>
       .download-control-btn.cancel {
         background: var(--system-red);
       }
+
+      /* Empty state styles */
+      .empty-state {
+        text-align: center;
+        padding: var(--spacing-xxl) var(--spacing-lg);
+        color: var(--label-secondary);
+        animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .empty-state .icon {
+        font-size: 64px;
+        margin-bottom: var(--spacing-lg);
+        opacity: 0.6;
+        filter: grayscale(0.3);
+      }
+
+      .empty-state h3 {
+        margin: 0 0 var(--spacing-sm) 0;
+        font-size: var(--text-title3);
+        color: var(--label-primary);
+        font-weight: 600;
+        letter-spacing: -0.4px;
+      }
+
+      .empty-state p {
+        margin: 0;
+        font-size: var(--text-subhead);
+        line-height: 1.5;
+        max-width: 280px;
+        margin: 0 auto;
+      }
+
+      /* Debug panel styles */
+      .debug-panel {
+        background: var(--background-tertiary);
+        border: 0.5px solid var(--separator);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono",
+          monospace;
+        font-size: var(--text-caption1);
+        display: none;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .debug-panel.show {
+        display: block;
+        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .debug-panel pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: var(--label-secondary);
+        line-height: 1.5;
+      }
     </style>
   </head>
-  <body>
+  <body class="side-panel">
+    <!-- Header Section -->
     <div class="header">
-      <h1>🎬 Video Downloader</h1>
+      <h1>
+        <span>📊</span>
+        <span>Download Manager</span>
+      </h1>
       <div class="status-info">
         <div class="status-dot" id="statusDot"></div>
         <span id="statusText">Ready</span>
       </div>
     </div>
 
-    <div class="controls">
-      <button class="btn" id="rescanBtn">🔄 Rescan</button>
-      <button class="btn secondary" id="forceReloadBtn">⚡ Force Reload</button>
-      <button class="btn secondary" id="clearBtn">🗑️ Clear</button>
-      <button class="btn secondary" id="debugBtn">🔍 Debug</button>
+    <!-- Controls Section -->
+    <div class="controls flex gap-2">
+      <button id="scanBtn" class="btn">
+        <span>🔍</span>
+        <span>Scan Page</span>
+      </button>
+      <button id="clearBtn" class="btn btn-secondary">
+        <span>🗑️</span>
+        <span>Clear All</span>
+      </button>
+      <button id="debugBtn" class="btn btn-secondary">
+        <span>🔍</span>
+        <span>Debug</span>
+      </button>
     </div>
 
+    <!-- Status Message -->
     <div class="status" id="statusMessage"></div>
 
+    <!-- Debug Panel -->
     <div class="debug-panel" id="debugPanel">
       <pre id="debugContent">
 Click Debug button to view storage contents...</pre
       >
     </div>
 
-    <div class="video-count hidden" id="videoCount">
-      No videos detected
+    <!-- Statistics Section -->
+    <div class="section">
+      <div class="section-title">Statistics</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="totalVideos">0</div>
+          <div class="stat-label">Videos Found</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="activeDownloads">0</div>
+          <div class="stat-label">Downloading</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="completedDownloads">0</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
     </div>
+
+    <!-- Active Downloads Section -->
+    <div class="section">
+      <div class="section-title">Active Downloads</div>
+      <div id="activeDownloadsList" class="downloads-list">
+        <div class="no-videos">No active downloads</div>
+      </div>
+    </div>
+
+    <!-- Available Videos Section -->
+    <div class="section">
+      <div class="section-title">Available Videos</div>
+      <div id="videosList" class="video-list">
+        <div class="no-videos">
+          Click "Scan Page" to find downloadable videos
+        </div>
+      </div>
+    </div>
+
+    <!-- Download History Section -->
+    <div class="section">
+      <div class="section-title">Recent Downloads</div>
+      <div id="downloadHistory" class="downloads-list">
+        <div class="no-videos">No recent downloads</div>
+      </div>
+    </div>
+
+    <div class="video-count hidden" id="videoCount">No videos detected</div>
 
     <div class="download-manager hidden" id="downloadManager">
       <h3 class="section-title">📥 Active Downloads</h3>
       <div class="download-list" id="downloadList"></div>
     </div>
 
-    <div
-      class="scanning-indicator hidden"
-      id="scanningIndicator"
-    >
+    <div class="scanning-indicator hidden" id="scanningIndicator">
       <div class="spinner"></div>
       <span>Scanning for videos...</span>
     </div>

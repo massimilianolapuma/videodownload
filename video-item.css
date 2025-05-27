@@ -1,0 +1,238 @@
+/* Video Downloader Extension - Video Item Styles */
+/* Based on the YoutubeFormat reference design */
+
+/* Video item container */
+.video-item {
+  background: var(--background-primary);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  height: 5rem;
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+}
+
+.video-item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  border-color: color-mix(
+    in srgb,
+    var(--system-blue) 30%,
+    var(--separator)
+  );
+}
+
+/* Left part with video thumbnail/preview */
+.video-left {
+  min-width: 5.8rem;
+  position: relative;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: var(--system-gray6);
+  user-select: none;
+}
+
+.video-favicon {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  bottom: 4px;
+  left: 4px;
+  background-size: cover;
+  background-color: white;
+  border-radius: 3px;
+  z-index: 1;
+}
+
+.video-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: white;
+}
+
+/* Right part with video info and actions */
+.video-right {
+  flex: 1;
+  padding: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.video-top {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  position: relative;
+}
+
+.video-tags {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.video-tag {
+  font-size: 8px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.format-tag {
+  background: color-mix(in srgb, var(--system-blue) 15%, transparent);
+  color: var(--system-blue);
+}
+
+.type-tag {
+  background: color-mix(in srgb, var(--system-green) 15%, transparent);
+  color: var(--system-green);
+  display: flex;
+  gap: 2px;
+}
+
+.type-tag .icon {
+  font-size: 10px;
+}
+
+.video-title {
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: var(--text-caption1);
+  color: var(--label-primary);
+  text-transform: uppercase;
+  font-style: italic;
+}
+
+.video-size {
+  color: var(--label-tertiary);
+  font-size: var(--text-caption2);
+  margin-right: var(--spacing-xs);
+}
+
+.btn-hide {
+  background: none;
+  border: none;
+  color: var(--label-tertiary);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-hide:hover {
+  color: var(--label-primary);
+}
+
+/* Bottom part with download controls */
+.video-bottom {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.video-format-select {
+  flex: 1;
+}
+
+.format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  border: 0.5px solid var(--separator);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--spacing-xs);
+  background: var(--background-secondary);
+  font-size: var(--text-caption2);
+  cursor: pointer;
+}
+
+.format-container {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.format-quality {
+  padding: 0 var(--spacing-xs);
+  height: 14px;
+  line-height: 14px;
+  border-radius: var(--radius-xs);
+  font-size: 8px;
+  background-color: var(--system-gray6);
+  color: var(--label-secondary);
+  border: 0.5px solid var(--separator);
+}
+
+.btn-download {
+  min-width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--system-blue);
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-download:hover {
+  background: color-mix(in srgb, var(--system-blue) 90%, black);
+}
+
+.video-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--background-tertiary);
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--system-blue);
+  width: 0%;
+  transition: width 0.3s ease-in-out;
+}
+
+/* Style for specific quality indicators */
+.format-quality._1080p, .format-quality._1440p, .format-quality._2160p, .format-quality._4k, .format-quality._4K {
+  background-color: color-mix(in srgb, var(--system-green) 15%, transparent);
+  color: var(--system-green);
+  border-color: color-mix(in srgb, var(--system-green) 30%, transparent);
+}
+
+.format-quality._720p {
+  background-color: color-mix(in srgb, var(--system-blue) 15%, transparent);
+  color: var(--system-blue);
+  border-color: color-mix(in srgb, var(--system-blue) 30%, transparent);
+}
+
+.format-quality._480p, .format-quality._360p, .format-quality._240p {
+  background-color: color-mix(in srgb, var(--system-orange) 15%, transparent);
+  color: var(--system-orange);
+  border-color: color-mix(in srgb, var(--system-orange) 30%, transparent);
+}

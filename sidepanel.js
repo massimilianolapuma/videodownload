@@ -229,43 +229,104 @@ function displayVideos(videos) {
   updateVideoDisplay(videos);
 }
 
-// Create video element with proper structure for the HTML
+// Create video element with horizontal layout inspired by Video DownloadHelper
 function createVideoElement(video, index) {
   const div = document.createElement("div");
   div.className = "video-item";
+  div.setAttribute("status", "downloadable");
+  div.style.setProperty("--order", index);
 
-  // Create video preview with real thumbnail or capture frame
-  const previewHtml = createVideoPreview(video, index);
+  // Get video format and quality
+  const format = getVideoContainer(video);
+  const videoSource = getVideoSource(video.url || "");
+  const quality = video.quality || "Unknown";
 
+  // Use poster image if available, or use background image placeholder
+  const bgStyle = video.poster
+    ? `background-image: url('${video.poster}')`
+    : `background: linear-gradient(135deg, var(--system-purple) 0%, var(--system-blue) 100%)`;
+
+  // Generate the HTML structure to match desiderata.png design
   div.innerHTML = `
-    ${previewHtml}
-    <div class="video-info">
-      <div class="video-title">${video.title || `Video ${index + 1}`}</div>
-      <div class="video-meta">
-        <span class="video-badge">${video.quality || "Unknown"}</span>
-        <span class="video-badge">${video.size || "Unknown size"}</span>
-        ${
-          video.duration
-            ? `<span class="video-badge">${video.duration}s</span>`
-            : ""
-        }
-      </div>
-      <div class="video-actions">
-        <button class="btn btn-success download-btn" data-video='${JSON.stringify(
-          video
-        )}'>
-          <span>📥</span>
-          <span>Download</span>
-        </button>
-      </div>
-      <div class="video-progress" style="display: none;">
-        <div class="progress-bar">
+    <hbox class="video-left" align="start" style="${bgStyle}">
+      <div class="video-favicon" style="background-image: url('${
+        videoSource.icon
+      }')"></div>
+      ${!video.poster ? '<div class="video-placeholder">▶</div>' : ""}
+    </hbox>
+    <vbox class="video-right" flex="1">
+      <hbox class="video-top" align="center">
+        <hbox class="video-tags">
+          <span class="video-tag format-tag">${videoSource.name}</span>
+          <span class="video-tag type-tag" title="Video${
+            video.hasAudio ? " & Audio" : ""
+          }">
+            <span class="icon">🎬</span>${
+              video.hasAudio ? '<span class="icon">🔊</span>' : ""
+            }
+          </span>
+        </hbox>
+        <p class="video-title" flex="1" title="${
+          video.title || `Video ${index + 1}`
+        }">
+          ${video.title || `Video ${index + 1}`}
+        </p>
+        <span class="video-size">${video.size || ""}</span>
+        <button class="btn-hide" title="Hide video">×</button>
+      </hbox>
+      <hbox align="center" pack="end" class="video-bottom" flex="1">
+        <div class="video-format-select">
+          <button class="format-btn">
+            <span class="format-container">${format}</span>
+            <span class="format-quality _${quality.replace(
+              /[^\w]/g,
+              ""
+            )}">${quality}</span>
+          </button>
+        </div>
+        <div class="video-actions">
+          <button class="btn btn-download download-btn" data-video='${JSON.stringify(
+            video
+          )}'>
+            <span>📥</span>
+          </button>
+        </div>
+        <div class="video-progress-bar" style="display: none;">
           <div class="progress-fill"></div>
         </div>
-        <div class="progress-text">Downloading...</div>
-      </div>
-    </div>
+      </hbox>
+    </vbox>
   `;
+
+  // Add event listeners to the buttons
+  const hideBtn = div.querySelector(".btn-hide");
+  if (hideBtn) {
+    hideBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      div.style.display = "none";
+      // Optionally, you could remove this video from the videos array
+      // and update the total count
+      const totalVideos = document.getElementById("totalVideos");
+      if (totalVideos) {
+        const currentTotal = parseInt(totalVideos.textContent);
+        if (!isNaN(currentTotal)) {
+          totalVideos.textContent = Math.max(0, currentTotal - 1);
+        }
+      }
+    });
+  }
+
+  // Format selection button
+  const formatBtn = div.querySelector(".format-btn");
+  if (formatBtn) {
+    formatBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // In the future, we could implement a dropdown menu for format selection
+      // For now, it's just a UI element
+    });
+  }
 
   return div;
 }
@@ -1039,6 +1100,96 @@ function formatSpeed(bytesPerSecond) {
   return (
     parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(1)) + " " + sizes[i]
   );
+}
+
+// Helper functions for video item display
+function getFaviconUrl() {
+  try {
+    // Try to get the current page's favicon
+    const link =
+      document.querySelector("link[rel*='icon']") ||
+      document.querySelector("link[rel='shortcut icon']");
+    if (link) {
+      return link.href;
+    }
+    // Fallback to default favicon path
+    return new URL("/favicon.ico", window.location.origin).href;
+  } catch (e) {
+    return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text y="18" font-size="20">🌐</text></svg>';
+  }
+}
+
+function getVideoFormat(video) {
+  // Extract format from URL or default to type
+  if (video.url) {
+    const url = video.url.toLowerCase();
+    if (url.includes("youtube")) return "YouTube";
+    if (url.includes("vimeo")) return "Vimeo";
+    if (url.includes(".mp4")) return "MP4";
+    if (url.includes(".webm")) return "WebM";
+    if (url.includes(".mkv")) return "MKV";
+  }
+  return video.type || "HTML5";
+}
+
+// Helper function to get video source information
+function getVideoSource(url) {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+
+    // Common video sources with their icons
+    const sources = {
+      youtube: { name: "YouTube", icon: "https://www.youtube.com/favicon.ico" },
+      "youtu.be": {
+        name: "YouTube",
+        icon: "https://www.youtube.com/favicon.ico",
+      },
+      vimeo: { name: "Vimeo", icon: "https://vimeo.com/favicon.ico" },
+      dailymotion: {
+        name: "DailyMotion",
+        icon: "https://www.dailymotion.com/favicon.ico",
+      },
+      facebook: {
+        name: "Facebook",
+        icon: "https://www.facebook.com/favicon.ico",
+      },
+      twitter: { name: "Twitter", icon: "https://twitter.com/favicon.ico" },
+      instagram: {
+        name: "Instagram",
+        icon: "https://www.instagram.com/favicon.ico",
+      },
+    };
+
+    // Find matching source
+    for (const [domain, source] of Object.entries(sources)) {
+      if (hostname.includes(domain)) {
+        return source;
+      }
+    }
+
+    // Try to get favicon from hostname
+    return {
+      name: getVideoContainer(url),
+      icon: `https://${hostname}/favicon.ico`,
+    };
+  } catch (e) {
+    console.log("Could not parse URL for video source:", e);
+    // Default for invalid URLs
+    return {
+      name: "Video",
+      icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"%3E%3Cpath fill="%23444" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"%3E%3C/path%3E%3C/svg%3E',
+    };
+  }
+}
+
+function getVideoContainer(video) {
+  // Get file container/extension
+  if (video.url) {
+    const extension = getExtensionFromUrl(video.url).replace(".", "");
+    return extension.toUpperCase();
+  }
+  return "MP4";
 }
 
 // Initialize when DOM is ready
