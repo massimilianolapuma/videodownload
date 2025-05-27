@@ -1472,6 +1472,24 @@ class VideoDownloaderContent {
   }
 }
 
+// Add this function to convert blob URL to base64
+async function blobUrlToBase64(blobUrl) {
+  try {
+    const response = await fetch(blobUrl);
+    const blob = await response.blob();
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("Error converting blob URL:", error);
+    throw error;
+  }
+}
+
 // Initialize content script when DOM is ready
 console.log("🔄 Initializing VideoDownloaderContent...");
 
@@ -1501,3 +1519,40 @@ if (!window.videoDownloaderContent) {
     "ℹ️ VideoDownloaderContent already exists, skipping initialization"
   );
 }
+
+// Modify the download handler to convert blob URLs
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "downloadVideo") {
+    const { url, filename } = request;
+
+    // Check if it's a blob URL
+    if (url.startsWith("blob:")) {
+      // Convert blob URL to base64
+      blobUrlToBase64(url)
+        .then((base64Data) => {
+          // Send base64 data to background script
+          chrome.runtime.sendMessage({
+            action: "downloadBlob",
+            data: base64Data,
+            filename: filename,
+            mimeType: "video/mp4", // Adjust based on actual video type
+          });
+          sendResponse({ success: true });
+        })
+        .catch((error) => {
+          console.error("Failed to convert blob URL:", error);
+          sendResponse({ success: false, error: error.message });
+        });
+
+      return true; // Keep message channel open for async response
+    } else {
+      // Regular URL, pass through to background
+      chrome.runtime.sendMessage({
+        action: "download",
+        url: url,
+        filename: filename,
+      });
+      sendResponse({ success: true });
+    }
+  }
+});

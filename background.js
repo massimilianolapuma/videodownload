@@ -415,6 +415,48 @@ class VideoDownloaderBackground {
           break;
         }
 
+        case "downloadBlob": {
+          try {
+            // Convert base64 to blob
+            const blob = this.base64ToBlob(request.data, request.mimeType);
+
+            // Create a blob URL in the service worker context
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Download the blob
+            chrome.downloads.download(
+              {
+                url: blobUrl,
+                filename: request.filename,
+                saveAs: true,
+              },
+              (downloadId) => {
+                if (chrome.runtime.lastError) {
+                  console.error("Download error:", chrome.runtime.lastError);
+                  sendResponse({
+                    success: false,
+                    error: chrome.runtime.lastError.message,
+                  });
+                } else {
+                  console.log("Download started:", downloadId);
+
+                  // Clean up the blob URL after a delay
+                  setTimeout(() => {
+                    URL.revokeObjectURL(blobUrl);
+                  }, 60000); // Clean up after 1 minute
+
+                  sendResponse({ success: true, downloadId });
+                }
+              }
+            );
+          } catch (error) {
+            console.error("Error processing blob download:", error);
+            sendResponse({ success: false, error: error.message });
+          }
+
+          return true; // Keep message channel open
+        }
+
         default:
           sendResponse({ error: "Unknown action" });
       }
@@ -798,6 +840,19 @@ class VideoDownloaderBackground {
     } else {
       return "Unknown";
     }
+  }
+
+  // Function to convert base64 to blob
+  base64ToBlob(base64Data, mimeType) {
+    const base64Response = base64Data.split(",")[1];
+    const binaryString = atob(base64Response);
+    const bytes = new Uint8Array(binaryString.length);
+
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    return new Blob([bytes], { type: mimeType });
   }
 }
 

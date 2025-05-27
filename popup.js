@@ -20,6 +20,46 @@ class VideoDownloaderPopup {
       .addEventListener("click", () => {
         this.openSidePanel();
       });
+
+    // Update the download button click handler
+    document.addEventListener("click", async (e) => {
+      if (e.target.classList.contains("download-btn")) {
+        const videoItem = e.target.closest(".video-item");
+        const url = videoItem.dataset.url;
+        const title = videoItem.dataset.title || "video";
+        const filename = this.sanitizeFilename(title) + ".mp4";
+
+        try {
+          // Send download request to content script first
+          const [tab] = await chrome.tabs.query({
+            active: true,
+            currentWindow: true,
+          });
+
+          chrome.tabs.sendMessage(
+            tab.id,
+            {
+              action: "downloadVideo",
+              url: url,
+              filename: filename,
+            },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.error("Error:", chrome.runtime.lastError);
+                this.showError("Failed to start download");
+              } else if (response && !response.success) {
+                this.showError("Download failed: " + response.error);
+              } else {
+                this.showSuccess("Download started");
+              }
+            }
+          );
+        } catch (error) {
+          console.error("Download error:", error);
+          this.showError("Failed to start download");
+        }
+      }
+    });
   }
 
   async loadVideos() {
@@ -113,7 +153,9 @@ class VideoDownloaderPopup {
     videoList.innerHTML = videos
       .map(
         (video, index) => `
-      <div class="video-item">
+      <div class="video-item" data-url="${video.url}" data-title="${
+          video.title
+        }">
         <div class="video-title">${this.truncateText(
           video.title || "Unknown Video",
           60
@@ -555,6 +597,30 @@ class VideoDownloaderPopup {
         "error"
       );
     }
+  }
+
+  // Helper function to show error messages
+  showError(message) {
+    const status = document.getElementById("status");
+    status.textContent = message;
+    status.className = `status error`;
+    status.style.display = "block";
+
+    setTimeout(() => {
+      status.style.display = "none";
+    }, 3000);
+  }
+
+  // Helper function to show success messages
+  showSuccess(message) {
+    const status = document.getElementById("status");
+    status.textContent = message;
+    status.className = `status success`;
+    status.style.display = "block";
+
+    setTimeout(() => {
+      status.style.display = "none";
+    }, 3000);
   }
 }
 
