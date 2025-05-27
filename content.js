@@ -1,5 +1,11 @@
 // Content script for Video Downloader extension
+console.log("🚀 Video Downloader content script loading...");
+console.log(`📍 Page URL: ${window.location.href}`);
+console.log(`📄 Document ready state: ${document.readyState}`);
+
 if (typeof VideoDownloaderContent === "undefined") {
+  console.log("✅ Defining VideoDownloaderContent class...");
+
   class VideoDownloaderContent {
     constructor() {
       this.videos = [];
@@ -75,6 +81,12 @@ if (typeof VideoDownloaderContent === "undefined") {
     async handleMessage(request, sender, sendResponse) {
       try {
         switch (request.action) {
+          case "ping": {
+            console.log("📨 Received ping message - responding");
+            sendResponse({ success: true, ready: true });
+            break;
+          }
+
           case "scanVideos": {
             console.log(
               "📨 Received scanVideos message - forcing immediate scan"
@@ -1464,14 +1476,31 @@ if (typeof VideoDownloaderContent === "undefined") {
 }
 
 // Initialize content script when DOM is ready
+console.log("🔄 Initializing VideoDownloaderContent...");
+
 if (!window.videoDownloaderContent) {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      if (!window.videoDownloaderContent) {
-        window.videoDownloaderContent = new VideoDownloaderContent();
-      }
-    });
-  } else {
-    window.videoDownloaderContent = new VideoDownloaderContent();
+  try {
+    if (document.readyState === "loading") {
+      console.log("📄 Document still loading, waiting for DOMContentLoaded...");
+      document.addEventListener("DOMContentLoaded", () => {
+        if (!window.videoDownloaderContent) {
+          console.log("✅ DOM ready, creating VideoDownloaderContent instance");
+          window.videoDownloaderContent = new VideoDownloaderContent();
+          console.log("🎉 VideoDownloaderContent initialized successfully");
+        }
+      });
+    } else {
+      console.log(
+        "✅ DOM already ready, creating VideoDownloaderContent instance"
+      );
+      window.videoDownloaderContent = new VideoDownloaderContent();
+      console.log("🎉 VideoDownloaderContent initialized successfully");
+    }
+  } catch (error) {
+    console.error("❌ Failed to initialize VideoDownloaderContent:", error);
   }
+} else {
+  console.log(
+    "ℹ️ VideoDownloaderContent already exists, skipping initialization"
+  );
 }

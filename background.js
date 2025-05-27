@@ -76,22 +76,34 @@ class VideoDownloaderBackground {
     try {
       console.log(`Triggering video scan for tab ${tabId}`);
 
-      // First, ensure content script is injected
+      // First, ensure content script is injected and ready
       try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tabId },
-          files: ["content.js"],
-        });
-        console.log("Content script injected successfully");
-      } catch (injectionError) {
-        console.log(
-          "Content script already injected or injection failed:",
-          injectionError.message
-        );
-      }
+        // Try to ping the content script first
+        await chrome.tabs.sendMessage(tabId, { action: "ping" });
+        console.log("Content script already responsive");
+      } catch (pingError) {
+        console.log("Content script not responsive, injecting...");
 
-      // Wait a bit for content script to initialize
-      await new Promise((resolve) => setTimeout(resolve, 500));
+        // Inject content script
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ["content.js"],
+          });
+          console.log("Content script injected successfully");
+
+          // Wait longer for content script to initialize
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        } catch (injectionError) {
+          console.log(
+            "Content script injection failed:",
+            injectionError.message
+          );
+          throw new Error(
+            "Failed to inject content script: " + injectionError.message
+          );
+        }
+      }
 
       // Send message to content script to scan for videos
       const response = await chrome.tabs.sendMessage(tabId, {

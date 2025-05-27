@@ -239,8 +239,16 @@ class VideoDownloaderSidePanel {
         this.showScanningIndicator(false);
       }
     } catch (error) {
-      console.error("Error triggering rescan:", error);
-      this.updateStatus("error", "Scan failed: " + error.message);
+      console.error("❌ Error triggering rescan:", error);
+      let errorMessage = "Scan failed: " + error.message;
+
+      if (error.message.includes("Could not establish connection")) {
+        errorMessage = "Extension not ready - try refreshing the page";
+      } else if (error.message.includes("content script")) {
+        errorMessage = "Page not ready - try refreshing";
+      }
+
+      this.updateStatus("error", errorMessage);
       this.showScanningIndicator(false);
     }
   }
@@ -282,7 +290,7 @@ class VideoDownloaderSidePanel {
           `✅ Force scan completed - found ${response.videos.length} videos`
         );
         this.videos = response.videos;
-        this.displayVideos();
+        this.renderVideos();
         this.updateStatus(
           "ready",
           `${this.videos.length} videos found (fresh scan)`
@@ -290,7 +298,7 @@ class VideoDownloaderSidePanel {
       } else {
         console.log("⚠️ No videos found in force scan");
         this.videos = [];
-        this.displayVideos();
+        this.renderVideos();
         this.updateStatus("ready", "No videos found (fresh scan)");
       }
     } catch (error) {
@@ -841,7 +849,7 @@ class VideoDownloaderSidePanel {
         const testResponse = await chrome.tabs.sendMessage(tabId, {
           action: "scanVideos",
         });
-        if (testResponse && testResponse.videos) {
+        if (testResponse?.videos) {
           debugInfo += `✅ Content script responsive\n`;
           debugInfo += `📊 Live scan result: ${testResponse.videos.length} videos\n`;
           if (testResponse.videos.length > 0) {
@@ -857,7 +865,13 @@ class VideoDownloaderSidePanel {
         }
       } catch (error) {
         debugInfo += `❌ Content script error: ${error.message}\n`;
-        debugInfo += `🔧 Suggestion: Try reloading the page or extension\n`;
+        if (error.message.includes("Could not establish connection")) {
+          debugInfo += `🔧 Suggestion: Content script not injected - try refreshing the page\n`;
+        } else if (error.message.includes("Receiving end does not exist")) {
+          debugInfo += `🔧 Suggestion: Content script not ready - wait a moment and try again\n`;
+        } else {
+          debugInfo += `🔧 Suggestion: Try reloading the page or extension\n`;
+        }
       }
 
       debugInfo += "\n=== STORAGE CONTENTS ===\n";
