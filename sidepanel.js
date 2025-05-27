@@ -284,7 +284,9 @@ function createVideoElement(video, index) {
         }
       </div>
       <div class="video-actions">
-        <button class="btn btn-success download-btn" data-video='${JSON.stringify(video)}'>
+        <button class="btn btn-success download-btn" data-video='${JSON.stringify(
+          video
+        )}'>
           <span>📥</span>
           <span>Download</span>
         </button>

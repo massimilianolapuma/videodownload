@@ -537,7 +537,7 @@ class VideoDownloaderPopup {
     status.textContent = message;
     status.className = `status status-${type}`;
     status.classList.remove("hidden");
-    
+
     // Add animation
     status.classList.add("animate");
     setTimeout(() => status.classList.remove("animate"), 500);
@@ -677,7 +677,8 @@ class VideoDownloaderPopup {
     try {
       const urlObj = new URL(url);
       const pathname = urlObj.pathname;
-      const match = pathname.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
+      const regex = /\.([a-zA-Z0-9]+)(?:\?|$)/;
+      const match = regex.exec(pathname);
       if (match) {
         const ext = match[1].toLowerCase();
         if (["mp4", "webm", "mkv", "avi", "mov", "flv"].includes(ext)) {
