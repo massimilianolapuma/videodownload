@@ -50,6 +50,18 @@ class VideoDownloaderSidePanel {
     document.getElementById("debugBtn").addEventListener("click", () => {
       this.toggleDebugPanel();
     });
+
+    // Add force reload videos button event
+    const forceReloadBtn = document.getElementById("forceReloadBtn");
+    if (forceReloadBtn) {
+      forceReloadBtn.addEventListener("click", () => {
+        console.log("🔄 Force reload button clicked");
+        this.forceReloadVideos();
+      });
+    }
+
+    // Add debug storage check (can be called from console)
+    window.debugCheckStorage = () => this.debugCheckStorage();
   }
 
   setupMessageListener() {
@@ -131,7 +143,7 @@ class VideoDownloaderSidePanel {
 
     try {
       // Test if chrome.storage is available
-      if (!chrome.storage || !chrome.storage.local) {
+      if (!chrome.storage?.local) {
         throw new Error("Chrome storage API not available");
       }
 
@@ -144,7 +156,36 @@ class VideoDownloaderSidePanel {
       const videos = result[storageKey] || [];
       console.log(`📹 Found ${videos.length} videos in storage:`, videos);
 
-      this.videos = videos;
+      // Additional validation and debugging
+      if (videos.length > 0) {
+        console.log("🔍 Video data sample:", videos[0]);
+        console.log(
+          "🔍 All video titles:",
+          videos.map((v) => v.title || "No title")
+        );
+
+        // Validate each video object
+        videos.forEach((video, i) => {
+          if (!video || typeof video !== "object") {
+            console.error(`❌ Invalid video object at index ${i}:`, video);
+          } else if (!video.url) {
+            console.warn(`⚠️ Video ${i} missing URL:`, video);
+          }
+        });
+      }
+
+      // Ensure we're setting the array properly
+      this.videos = Array.isArray(videos) ? videos : [];
+      console.log(
+        `🎯 this.videos set to array of length: ${this.videos.length}`
+      );
+
+      // Force render with additional logging
+      console.log(
+        "🎬 About to call renderVideos with videos:",
+        this.videos.length
+      );
+      console.log("🔍 this.videos content before render:", this.videos);
       this.renderVideos();
 
       const statusMessage =
@@ -217,6 +258,54 @@ class VideoDownloaderSidePanel {
     }
   }
 
+  async forceReloadVideos() {
+    console.log("🔄 Force reloading videos...");
+    this.updateStatus("loading", "Force reloading videos...");
+
+    try {
+      // Get current tab again
+      const tabId = await this.getCurrentTab();
+      console.log("🔄 Current tab ID:", tabId);
+
+      if (!tabId) {
+        throw new Error("No active tab found");
+      }
+
+      // Load videos from storage
+      await this.loadVideosForCurrentTab();
+
+      console.log("✅ Force reload completed");
+      this.updateStatus("ready", `${this.videos.length} videos loaded`);
+    } catch (error) {
+      console.error("❌ Force reload failed:", error);
+      this.updateStatus("error", "Force reload failed: " + error.message);
+    }
+  }
+
+  // Add a debugging function to manually check storage
+  async debugCheckStorage() {
+    console.log("🔍 DEBUG: Checking storage contents...");
+
+    try {
+      const allStorage = await chrome.storage.local.get(null);
+      console.log("🔍 All storage contents:", allStorage);
+
+      if (this.currentTabId) {
+        const storageKey = `videos_${this.currentTabId}`;
+        const videos = allStorage[storageKey];
+        console.log(`🔍 Videos for current tab (${storageKey}):`, videos);
+
+        if (videos && videos.length > 0) {
+          console.log("🔍 Attempting to manually load these videos...");
+          this.videos = videos;
+          this.renderVideos();
+        }
+      }
+    } catch (error) {
+      console.error("❌ Debug storage check failed:", error);
+    }
+  }
+
   handleVideosUpdated(data) {
     console.log("🎬 Videos updated received:", data);
 
@@ -242,6 +331,7 @@ class VideoDownloaderSidePanel {
 
   renderVideos() {
     console.log(`🎬 Starting renderVideos with ${this.videos.length} videos`);
+    console.log("🔍 Videos array content:", this.videos);
 
     const videoList = document.getElementById("videoList");
     const emptyState = document.getElementById("emptyState");
@@ -253,117 +343,225 @@ class VideoDownloaderSidePanel {
       videoCount: !!videoCount,
     });
 
-    if (!videoList || !emptyState || !videoCount) {
-      console.error("❌ Required DOM elements not found!");
+    if (!videoList) {
+      console.error("❌ videoList element not found!");
       return;
     }
 
-    // Update video count
-    videoCount.textContent = `${this.videos.length} video${
-      this.videos.length !== 1 ? "s" : ""
-    } detected`;
-    videoCount.style.display = this.videos.length > 0 ? "block" : "none";
+    // Always update video count display
+    if (videoCount) {
+      videoCount.textContent = `${this.videos.length} video${
+        this.videos.length !== 1 ? "s" : ""
+      } detected`;
+      videoCount.style.display = this.videos.length > 0 ? "block" : "none";
+    }
 
     if (this.videos.length === 0) {
       console.log("📭 No videos to render, showing empty state");
       videoList.innerHTML = "";
-      emptyState.style.display = "block";
+      if (emptyState) {
+        emptyState.style.display = "block";
+      }
       return;
     }
 
     console.log("📹 Rendering videos...");
-    emptyState.style.display = "none";
+    if (emptyState) {
+      emptyState.style.display = "none";
+    }
     videoList.innerHTML = "";
+
+    // Add a simple test to verify videos array is valid
+    if (!Array.isArray(this.videos)) {
+      console.error(
+        "❌ this.videos is not an array:",
+        typeof this.videos,
+        this.videos
+      );
+      return;
+    }
 
     this.videos.forEach((video, index) => {
       console.log(`Creating video item ${index + 1}:`, video);
+
+      // Validate video object
+      if (!video || typeof video !== "object") {
+        console.error(`❌ Invalid video object at index ${index}:`, video);
+        return;
+      }
+
       try {
         const videoItem = this.createVideoItem(video, index);
-        videoList.appendChild(videoItem);
-        console.log(`✅ Video item ${index + 1} created and appended`);
+        if (videoItem) {
+          videoList.appendChild(videoItem);
+          console.log(
+            `✅ Video item ${index + 1} created and appended successfully`
+          );
+        } else {
+          console.error(
+            `❌ Video item ${index + 1} creation returned null/undefined`
+          );
+        }
       } catch (error) {
         console.error(`❌ Error creating video item ${index + 1}:`, error);
+        console.error("Video data that caused error:", video);
+        console.error("Error stack:", error.stack);
       }
     });
 
-    console.log("✅ renderVideos completed");
+    // Final verification
+    const renderedItems = videoList.querySelectorAll(".video-item");
+    console.log(
+      `✅ renderVideos completed. Expected: ${this.videos.length}, Rendered: ${renderedItems.length}`
+    );
+
+    if (renderedItems.length !== this.videos.length) {
+      console.warn("⚠️ Mismatch between expected and rendered video count!");
+      console.log("DOM children in videoList:", videoList.children.length);
+      console.log("VideoList innerHTML length:", videoList.innerHTML.length);
+    }
+
+    // Force a UI refresh
+    videoList.style.display = "none";
+    setTimeout(() => {
+      videoList.style.display = "flex";
+    }, 10);
   }
 
   createVideoItem(video, index) {
-    const item = document.createElement("div");
-    item.className = "video-item";
-    item.dataset.videoIndex = index;
+    console.log(`🔧 Creating video item ${index}:`, video);
 
-    // Generate thumbnail or placeholder
-    const previewHtml = video.poster
-      ? `<img src="${video.poster}" alt="Video thumbnail">`
-      : `<div class="placeholder">🎥</div>`;
-
-    // Determine video quality/resolution
-    const resolution = this.extractResolution(video) || "Unknown";
-    const fileSize = this.formatFileSize(video.size);
-    const duration = this.formatDuration(video.duration);
-
-    // Generate quality options
-    const qualityOptions = this.generateQualityOptions(video);
-
-    item.innerHTML = `
-      <div class="video-preview">
-        ${previewHtml}
-        <div class="play-overlay">▶</div>
-      </div>
-      <div class="video-info">
-        <div class="video-title">${video.title || `Video ${index + 1}`}</div>
-        <div class="video-meta">
-          ${resolution ? `<span class="resolution">${resolution}</span>` : ""}
-          ${fileSize ? `<span class="size">${fileSize}</span>` : ""}
-          ${duration ? `<span class="duration">${duration}</span>` : ""}
-        </div>
-        <div class="video-actions">
-          ${
-            qualityOptions.length > 1
-              ? `
-            <select class="quality-select" data-video-index="${index}">
-              ${qualityOptions
-                .map(
-                  (option) =>
-                    `<option value="${option.url}">${option.label}</option>`
-                )
-                .join("")}
-            </select>
-          `
-              : ""
-          }
-          <button class="download-btn" data-video-index="${index}" data-video-url="${
-      video.url
-    }">
-            📥 Download
-          </button>
-        </div>
-        <div class="progress-container" id="progress-${index}">
-          <div class="progress-bar">
-            <div class="progress-fill"></div>
-          </div>
-          <div class="progress-text">0%</div>
-        </div>
-      </div>
-    `;
-
-    // Bind download button event
-    const downloadBtn = item.querySelector(".download-btn");
-    downloadBtn.addEventListener("click", (e) => {
-      this.handleDownload(video, index, e.target);
-    });
-
-    // Bind quality selector change
-    const qualitySelect = item.querySelector(".quality-select");
-    if (qualitySelect) {
-      qualitySelect.addEventListener("change", (e) => {
-        downloadBtn.dataset.videoUrl = e.target.value;
-      });
+    // Validate input
+    if (!video || typeof video !== "object") {
+      console.error(`❌ Invalid video object for item ${index}:`, video);
+      return null;
     }
 
-    return item;
+    try {
+      const item = document.createElement("div");
+      item.className = "video-item";
+      item.dataset.videoIndex = index;
+
+      // Generate thumbnail or placeholder
+      const previewHtml = video.poster
+        ? `<img src="${video.poster}" alt="Video thumbnail">`
+        : `<div class="placeholder">🎥</div>`;
+
+      // Determine video quality/resolution - with safe fallbacks
+      const resolution = this.extractResolution(video) || "Unknown";
+      const fileSize = this.formatFileSize(video.size);
+      const duration = this.formatDuration(video.duration);
+
+      // Generate quality options - with error handling
+      let qualityOptions;
+      try {
+        qualityOptions = this.generateQualityOptions(video);
+      } catch (error) {
+        console.warn(
+          `⚠️ Error generating quality options for video ${index}:`,
+          error
+        );
+        qualityOptions = [
+          {
+            url: video.url || "#",
+            label: "Default Quality",
+          },
+        ];
+      }
+
+      // Build the HTML with safe values
+      const title = video.title || `Video ${index + 1}`;
+      const videoUrl = video.url || "#";
+
+      item.innerHTML = `
+        <div class="video-preview">
+          ${previewHtml}
+          <div class="play-overlay">▶</div>
+        </div>
+        <div class="video-info">
+          <div class="video-title">${title}</div>
+          <div class="video-meta">
+            ${
+              resolution && resolution !== "Unknown"
+                ? `<span class="resolution">${resolution}</span>`
+                : ""
+            }
+            ${fileSize ? `<span class="size">${fileSize}</span>` : ""}
+            ${duration ? `<span class="duration">${duration}</span>` : ""}
+          </div>
+          <div class="video-actions">
+            ${
+              qualityOptions.length > 1
+                ? `
+              <select class="quality-select" data-video-index="${index}">
+                ${qualityOptions
+                  .map(
+                    (option) =>
+                      `<option value="${option.url}">${option.label}</option>`
+                  )
+                  .join("")}
+              </select>
+            `
+                : ""
+            }
+            <button class="download-btn" data-video-index="${index}" data-video-url="${videoUrl}">
+              📥 Download
+            </button>
+          </div>
+          <div class="progress-container" id="progress-${index}">
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+            <div class="progress-text">0%</div>
+          </div>
+        </div>
+      `;
+
+      // Bind download button event with error handling
+      try {
+        const downloadBtn = item.querySelector(".download-btn");
+        if (downloadBtn) {
+          downloadBtn.addEventListener("click", (e) => {
+            this.handleDownload(video, index, e.target);
+          });
+        }
+
+        // Bind quality selector change
+        const qualitySelect = item.querySelector(".quality-select");
+        if (qualitySelect) {
+          qualitySelect.addEventListener("change", (e) => {
+            const downloadBtn = item.querySelector(".download-btn");
+            if (downloadBtn) {
+              downloadBtn.dataset.videoUrl = e.target.value;
+            }
+          });
+        }
+      } catch (error) {
+        console.error(
+          `❌ Error binding events for video item ${index}:`,
+          error
+        );
+      }
+
+      console.log(`✅ Successfully created video item ${index}`);
+      return item;
+    } catch (error) {
+      console.error(`❌ Error in createVideoItem for index ${index}:`, error);
+      console.error("Error stack:", error.stack);
+
+      // Return a minimal fallback item
+      const fallbackItem = document.createElement("div");
+      fallbackItem.className = "video-item";
+      fallbackItem.innerHTML = `
+        <div class="video-info">
+          <div class="video-title">Video ${index + 1} (Error loading)</div>
+          <div class="video-meta">
+            <span class="resolution">Error</span>
+          </div>
+        </div>
+      `;
+      return fallbackItem;
+    }
   }
 
   async handleDownload(video, index, button) {
