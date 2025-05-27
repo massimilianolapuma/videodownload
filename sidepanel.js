@@ -259,11 +259,11 @@ class VideoDownloaderSidePanel {
   }
 
   async forceReloadVideos() {
-    console.log("🔄 Force reloading videos...");
-    this.updateStatus("loading", "Force reloading videos...");
+    console.log("🔄 Force reloading videos with fresh scan...");
+    this.updateStatus("loading", "Force scanning for videos...");
 
     try {
-      // Get current tab again
+      // Get current tab
       const tabId = await this.getCurrentTab();
       console.log("🔄 Current tab ID:", tabId);
 
@@ -271,14 +271,35 @@ class VideoDownloaderSidePanel {
         throw new Error("No active tab found");
       }
 
-      // Load videos from storage
-      await this.loadVideosForCurrentTab();
+      // Send forceScan message to content script for a fresh scan
+      console.log("📨 Sending forceScan message to content script...");
+      const response = await chrome.tabs.sendMessage(tabId, {
+        action: "forceScan",
+      });
 
-      console.log("✅ Force reload completed");
-      this.updateStatus("ready", `${this.videos.length} videos loaded`);
+      if (response && response.videos) {
+        console.log(
+          `✅ Force scan completed - found ${response.videos.length} videos`
+        );
+        this.videos = response.videos;
+        this.displayVideos();
+        this.updateStatus(
+          "ready",
+          `${this.videos.length} videos found (fresh scan)`
+        );
+      } else {
+        console.log("⚠️ No videos found in force scan");
+        this.videos = [];
+        this.displayVideos();
+        this.updateStatus("ready", "No videos found (fresh scan)");
+      }
     } catch (error) {
       console.error("❌ Force reload failed:", error);
       this.updateStatus("error", "Force reload failed: " + error.message);
+
+      // Fallback to loading from storage
+      console.log("🔄 Falling back to storage reload...");
+      await this.loadVideosForCurrentTab();
     }
   }
 
@@ -792,18 +813,58 @@ class VideoDownloaderSidePanel {
 
   async updateDebugInfo() {
     const debugContent = document.getElementById("debugContent");
-    let debugInfo = "=== DEBUG INFO ===\n\n";
+    let debugInfo = "=== VIDEO DETECTION DEBUG INFO ===\n\n";
 
     try {
       // Current tab info
-      debugInfo += `Current Tab ID: ${this.currentTabId || "Not set"}\n\n`;
+      const tabId = this.currentTabId || (await this.getCurrentTab());
+      debugInfo += `Current Tab ID: ${tabId || "Not found"}\n`;
 
-      // Storage contents
-      debugInfo += "=== STORAGE CONTENTS ===\n";
+      // Try to get page info from content script
+      try {
+        const pageInfo = await chrome.tabs.sendMessage(tabId, {
+          action: "getPageInfo",
+        });
+        if (pageInfo && pageInfo.pageInfo) {
+          debugInfo += `Page URL: ${pageInfo.pageInfo.url}\n`;
+          debugInfo += `Page Title: ${pageInfo.pageInfo.title}\n`;
+          debugInfo += `Domain: ${pageInfo.pageInfo.domain}\n`;
+        }
+      } catch (error) {
+        debugInfo += `Page Info: Unable to retrieve (${error.message})\n`;
+      }
+
+      debugInfo += "\n=== CONTENT SCRIPT TEST ===\n";
+
+      // Test if content script is responding
+      try {
+        const testResponse = await chrome.tabs.sendMessage(tabId, {
+          action: "scanVideos",
+        });
+        if (testResponse && testResponse.videos) {
+          debugInfo += `✅ Content script responsive\n`;
+          debugInfo += `📊 Live scan result: ${testResponse.videos.length} videos\n`;
+          if (testResponse.videos.length > 0) {
+            debugInfo += "📋 Live detected videos:\n";
+            testResponse.videos.forEach((video, i) => {
+              debugInfo += `  ${i + 1}. ${video.title} (${video.type})\n`;
+              debugInfo += `     URL: ${video.url}\n`;
+              debugInfo += `     Size: ${video.size || "unknown"}\n`;
+            });
+          }
+        } else {
+          debugInfo += `❌ Content script not responding properly\n`;
+        }
+      } catch (error) {
+        debugInfo += `❌ Content script error: ${error.message}\n`;
+        debugInfo += `🔧 Suggestion: Try reloading the page or extension\n`;
+      }
+
+      debugInfo += "\n=== STORAGE CONTENTS ===\n";
       const allStorage = await chrome.storage.local.get(null);
 
       if (Object.keys(allStorage).length === 0) {
-        debugInfo += "Storage is empty\n\n";
+        debugInfo += "Storage is empty\n";
       } else {
         for (const [key, value] of Object.entries(allStorage)) {
           if (key.startsWith("videos_")) {
@@ -814,24 +875,41 @@ class VideoDownloaderSidePanel {
               value.forEach((video, i) => {
                 debugInfo += `  ${i + 1}. ${
                   video.title || video.url || "Unknown"
-                }\n`;
+                } (${video.type || "unknown"})\n`;
               });
             }
+          } else if (key.startsWith("detected_videos_")) {
+            debugInfo += `${key}: ${
+              Array.isArray(value) ? value.length : "Unknown"
+            } background detected\n`;
           } else {
-            debugInfo += `${key}: ${typeof value} (${JSON.stringify(
-              value
-            ).substring(0, 50)}...)\n`;
+            debugInfo += `${key}: ${typeof value}\n`;
           }
         }
       }
 
-      debugInfo += "\n=== CURRENT VIDEOS ===\n";
+      debugInfo += "\n=== CURRENT SIDEPANEL STATE ===\n";
       debugInfo += `Loaded videos count: ${this.videos.length}\n`;
-      this.videos.forEach((video, i) => {
-        debugInfo += `${i + 1}. ${video.title || "No title"} - ${
-          video.url || "No URL"
-        }\n`;
-      });
+      if (this.videos.length > 0) {
+        this.videos.forEach((video, i) => {
+          debugInfo += `${i + 1}. ${video.title || "No title"}\n`;
+          debugInfo += `   URL: ${video.url || "No URL"}\n`;
+          debugInfo += `   Type: ${video.type || "Unknown"}\n`;
+          debugInfo += `   Size: ${video.size || "Unknown"}\n`;
+        });
+      } else {
+        debugInfo += "No videos currently loaded in sidepanel\n";
+        debugInfo += "\n🔧 TROUBLESHOOTING STEPS:\n";
+        debugInfo += "1. Click 'Force Reload' to trigger fresh scan\n";
+        debugInfo += "2. Check browser console for content script errors\n";
+        debugInfo += "3. Verify videos are actually present on the page\n";
+        debugInfo += "4. Try refreshing the page and rescanning\n";
+      }
+
+      debugInfo += "\n=== EXTENSION STATUS ===\n";
+      debugInfo += `Manifest Version: 3\n`;
+      debugInfo += `Extension ID: ${chrome.runtime.id}\n`;
+      debugInfo += `Debug timestamp: ${new Date().toISOString()}\n`;
     } catch (error) {
       debugInfo += `Error getting debug info: ${error.message}\n`;
     }

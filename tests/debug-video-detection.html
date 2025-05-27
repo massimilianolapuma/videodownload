@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Detection Debug Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .video-section {
+        margin: 30px 0;
+        padding: 20px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+      }
+      video {
+        max-width: 100%;
+        height: auto;
+      }
+      .debug-info {
+        background: #f5f5f5;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+      }
+      button {
+        background: #007cba;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #005a87;
+      }
+      .results {
+        background: #e8f5e8;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border-left: 4px solid #4caf50;
+      }
+      .error {
+        background: #ffe8e8;
+        border-left: 4px solid #f44336;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎥 Video Detection Debug Page</h1>
+    <p>
+      This page contains various types of videos to test the extension's
+      detection capabilities.
+    </p>
+
+    <div class="debug-info">
+      <h3>Debug Tools</h3>
+      <button onclick="debugVideoDetection()">🔍 Debug Video Detection</button>
+      <button onclick="testExtensionMessages()">
+        📨 Test Extension Messages
+      </button>
+      <button onclick="listAllVideoElements()">📋 List Video Elements</button>
+      <button onclick="checkContentScript()">🔧 Check Content Script</button>
+      <div id="debug-results" class="results" style="display: none"></div>
+    </div>
+
+    <div class="video-section">
+      <h2>1. Standard HTML5 Video with src attribute</h2>
+      <video
+        controls
+        width="400"
+        poster="https://www.w3.org/WAI/WCAG21/working-examples/video-audio-captions/rabbit-video-poster.jpg"
+      >
+        <source
+          src="https://www.w3.org/WAI/WCAG21/working-examples/video-audio-captions/rabbit-video.mp4"
+          type="video/mp4"
+        />
+        <source
+          src="https://www.w3.org/WAI/WCAG21/working-examples/video-audio-captions/rabbit-video.webm"
+          type="video/webm"
+        />
+        Your browser does not support the video tag.
+      </video>
+      <p><strong>Expected:</strong> Should detect MP4 and WebM sources</p>
+    </div>
+
+    <div class="video-section">
+      <h2>2. Big Buck Bunny Test Video</h2>
+      <video
+        controls
+        width="400"
+        title="Big Buck Bunny Test Video"
+        data-title="Big Buck Bunny"
+        src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+      >
+        Your browser does not support the video tag.
+      </video>
+      <p>
+        <strong>Expected:</strong> Should detect with title "Big Buck Bunny Test
+        Video"
+      </p>
+    </div>
+
+    <div class="video-section">
+      <h2>3. Video with Multiple Sources</h2>
+      <video controls width="400">
+        <source
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+          type="video/mp4"
+        />
+        <source
+          src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.webm"
+          type="video/webm"
+        />
+        Your browser does not support the video tag.
+      </video>
+      <p><strong>Expected:</strong> Should detect highest quality source</p>
+    </div>
+
+    <div class="video-section">
+      <h2>4. YouTube Embed</h2>
+      <iframe
+        width="400"
+        height="225"
+        src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+        frameborder="0"
+        allowfullscreen
+      >
+      </iframe>
+      <p><strong>Expected:</strong> Should detect as YouTube video</p>
+    </div>
+
+    <div class="video-section">
+      <h2>5. Video with Dynamic URL (Blob)</h2>
+      <video id="blob-video" controls width="400"></video>
+      <button onclick="createBlobVideo()">Create Blob Video</button>
+      <p><strong>Expected:</strong> Should detect blob URL when created</p>
+    </div>
+
+    <script>
+      // Debug functions
+      async function debugVideoDetection() {
+        const results = document.getElementById("debug-results");
+        results.style.display = "block";
+        results.className = "results";
+
+        let output = "<h4>🔍 Video Detection Debug Results</h4>";
+
+        try {
+          // Check if content script is loaded
+          output +=
+            "<p><strong>1. Checking content script availability...</strong></p>";
+
+          if (typeof VideoDownloaderContent !== "undefined") {
+            output += "✅ VideoDownloaderContent class is available<br>";
+          } else {
+            output += "❌ VideoDownloaderContent class is NOT available<br>";
+          }
+
+          if (window.videoDownloaderContent) {
+            output += "✅ videoDownloaderContent instance exists<br>";
+          } else {
+            output += "❌ videoDownloaderContent instance does NOT exist<br>";
+          }
+
+          // List all video elements
+          output += "<p><strong>2. Video elements in DOM:</strong></p>";
+          const videos = document.querySelectorAll("video");
+          output += `Found ${videos.length} video elements:<br>`;
+
+          videos.forEach((video, index) => {
+            output += `Video ${index + 1}:<br>`;
+            output += `  - src: ${video.src || "none"}<br>`;
+            output += `  - currentSrc: ${video.currentSrc || "none"}<br>`;
+            output += `  - sources: ${
+              video.querySelectorAll("source").length
+            }<br>`;
+
+            const sources = video.querySelectorAll("source");
+            sources.forEach((source, sourceIndex) => {
+              output += `    Source ${sourceIndex + 1}: ${source.src}<br>`;
+            });
+          });
+
+          // Test extension communication
+          output +=
+            "<p><strong>3. Testing extension communication...</strong></p>";
+
+          if (typeof chrome !== "undefined" && chrome.runtime) {
+            try {
+              const response = await new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage(
+                  { action: "scanVideos" },
+                  (response) => {
+                    if (chrome.runtime.lastError) {
+                      reject(chrome.runtime.lastError);
+                    } else {
+                      resolve(response);
+                    }
+                  }
+                );
+              });
+
+              output += `✅ Extension communication successful<br>`;
+              output += `Found ${
+                response?.videos?.length || 0
+              } videos via extension<br>`;
+
+              if (response?.videos?.length > 0) {
+                output += "<strong>Detected videos:</strong><br>";
+                response.videos.forEach((video, index) => {
+                  output += `  ${index + 1}. ${video.title || "Untitled"} (${
+                    video.type
+                  })<br>`;
+                  output += `     URL: ${video.url}<br>`;
+                });
+              }
+            } catch (error) {
+              output += `❌ Extension communication failed: ${error.message}<br>`;
+            }
+          } else {
+            output += "❌ Chrome extension API not available<br>";
+          }
+        } catch (error) {
+          results.className = "results error";
+          output += `<p><strong>Error:</strong> ${error.message}</p>`;
+        }
+
+        results.innerHTML = output;
+      }
+
+      async function testExtensionMessages() {
+        const results = document.getElementById("debug-results");
+        results.style.display = "block";
+        results.className = "results";
+
+        let output = "<h4>📨 Extension Message Test</h4>";
+
+        try {
+          // Test different message types
+          const messages = [
+            { action: "scanVideos" },
+            { action: "getPageInfo" },
+          ];
+
+          for (const message of messages) {
+            try {
+              const response = await new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage(message, (response) => {
+                  if (chrome.runtime.lastError) {
+                    reject(chrome.runtime.lastError);
+                  } else {
+                    resolve(response);
+                  }
+                });
+              });
+
+              output += `✅ ${message.action}: ${JSON.stringify(
+                response
+              ).substring(0, 100)}...<br>`;
+            } catch (error) {
+              output += `❌ ${message.action}: ${error.message}<br>`;
+            }
+          }
+        } catch (error) {
+          results.className = "results error";
+          output += `<p><strong>Error:</strong> ${error.message}</p>`;
+        }
+
+        results.innerHTML = output;
+      }
+
+      function listAllVideoElements() {
+        const results = document.getElementById("debug-results");
+        results.style.display = "block";
+        results.className = "results";
+
+        let output = "<h4>📋 All Video Elements</h4>";
+
+        const videos = document.querySelectorAll("video");
+        const iframes = document.querySelectorAll("iframe");
+
+        output += `<p>Found ${videos.length} video elements and ${iframes.length} iframes</p>`;
+
+        videos.forEach((video, index) => {
+          output += `<div style="border: 1px solid #ccc; padding: 10px; margin: 5px;">`;
+          output += `<strong>Video ${index + 1}:</strong><br>`;
+          output += `src: ${video.src || "none"}<br>`;
+          output += `currentSrc: ${video.currentSrc || "none"}<br>`;
+          output += `poster: ${video.poster || "none"}<br>`;
+          output += `title: ${video.title || "none"}<br>`;
+          output += `width: ${
+            video.videoWidth || video.width || "unknown"
+          }<br>`;
+          output += `height: ${
+            video.videoHeight || video.height || "unknown"
+          }<br>`;
+          output += `duration: ${video.duration || "unknown"}<br>`;
+
+          const sources = video.querySelectorAll("source");
+          if (sources.length > 0) {
+            output += `sources: ${sources.length}<br>`;
+            sources.forEach((source, sourceIndex) => {
+              output += `  ${sourceIndex + 1}. ${source.src} (${
+                source.type || "no type"
+              })<br>`;
+            });
+          }
+          output += `</div>`;
+        });
+
+        results.innerHTML = output;
+      }
+
+      function checkContentScript() {
+        const results = document.getElementById("debug-results");
+        results.style.display = "block";
+        results.className = "results";
+
+        let output = "<h4>🔧 Content Script Check</h4>";
+
+        // Check global variables
+        output += "<p><strong>Global Variables:</strong></p>";
+        output += `VideoDownloaderContent: ${typeof VideoDownloaderContent}<br>`;
+        output += `window.videoDownloaderContent: ${typeof window.videoDownloaderContent}<br>`;
+        output += `chrome: ${typeof chrome}<br>`;
+        output += `chrome.runtime: ${typeof chrome?.runtime}<br>`;
+
+        // Check if we can call content script methods directly
+        if (window.videoDownloaderContent) {
+          output += "<p><strong>Content Script Methods:</strong></p>";
+          try {
+            const videos = window.videoDownloaderContent.scanForVideos();
+            output += `✅ scanForVideos() callable<br>`;
+          } catch (error) {
+            output += `❌ scanForVideos() error: ${error.message}<br>`;
+          }
+        }
+
+        results.innerHTML = output;
+      }
+
+      function createBlobVideo() {
+        // Create a simple video blob (this is just for testing - real blob videos would come from actual video data)
+        const canvas = document.createElement("canvas");
+        canvas.width = 320;
+        canvas.height = 240;
+        const ctx = canvas.getContext("2d");
+
+        // Draw a simple pattern
+        ctx.fillStyle = "#ff0000";
+        ctx.fillRect(0, 0, 160, 120);
+        ctx.fillStyle = "#00ff00";
+        ctx.fillRect(160, 0, 160, 120);
+        ctx.fillStyle = "#0000ff";
+        ctx.fillRect(0, 120, 160, 120);
+        ctx.fillStyle = "#ffff00";
+        ctx.fillRect(160, 120, 160, 120);
+
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const video = document.getElementById("blob-video");
+          video.src = url;
+          console.log("Created blob video with URL:", url);
+        });
+      }
+
+      // Auto-run debug when page loads
+      window.addEventListener("load", () => {
+        console.log("Debug page loaded, ready for testing");
+        setTimeout(() => {
+          console.log("Running automatic debug check...");
+          debugVideoDetection();
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comprehensive Video Detection Test</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f7fa;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .test-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .test-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #667eea;
+      }
+      .test-card h3 {
+        margin-top: 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ccc;
+      }
+      .status-indicator.success {
+        background: #4caf50;
+      }
+      .status-indicator.error {
+        background: #f44336;
+      }
+      .status-indicator.warning {
+        background: #ff9800;
+      }
+      .status-indicator.info {
+        background: #2196f3;
+      }
+      video {
+        width: 100%;
+        max-width: 300px;
+        margin: 10px 0;
+        border-radius: 8px;
+      }
+      .controls {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 5px;
+        font-size: 14px;
+        transition: background 0.3s;
+      }
+      .btn:hover {
+        background: #5a6fd8;
+      }
+      .btn.secondary {
+        background: #6c757d;
+      }
+      .btn.secondary:hover {
+        background: #5a6268;
+      }
+      .results {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .log-entry {
+        padding: 8px 12px;
+        margin: 5px 0;
+        border-radius: 5px;
+        font-family: "Consolas", "Monaco", monospace;
+        font-size: 13px;
+      }
+      .log-entry.success {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+      .log-entry.error {
+        background: #ffebee;
+        color: #c62828;
+      }
+      .log-entry.warning {
+        background: #fff8e1;
+        color: #ef6c00;
+      }
+      .log-entry.info {
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+      .video-count {
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+        text-align: center;
+        margin: 20px 0;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🎬 Video Downloader Extension Test Suite</h1>
+      <p>Comprehensive testing for enhanced video detection capabilities</p>
+    </div>
+
+    <div class="controls">
+      <button class="btn" onclick="runFullTest()">🔍 Run Full Test</button>
+      <button class="btn" onclick="testVideoDetection()">
+        🎥 Test Video Detection
+      </button>
+      <button class="btn" onclick="testExtensionAPI()">
+        🔌 Test Extension API
+      </button>
+      <button class="btn secondary" onclick="clearResults()">
+        🗑️ Clear Results
+      </button>
+      <button class="btn secondary" onclick="downloadTestResults()">
+        📊 Download Results
+      </button>
+    </div>
+
+    <div class="video-count" id="videoCount">Videos Detected: 0</div>
+
+    <div class="test-grid">
+      <!-- Test Case 1: Standard MP4 -->
+      <div class="test-card">
+        <h3>
+          <span class="status-indicator" id="test1-status"></span>Standard MP4
+          Video
+        </h3>
+        <video controls>
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            type="video/mp4"
+          />
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.webm"
+            type="video/webm"
+          />
+        </video>
+        <p><strong>Test:</strong> Standard HTML5 video with MP4 source</p>
+        <p><strong>Expected:</strong> Should detect MP4 URL</p>
+      </div>
+
+      <!-- Test Case 2: Multiple Sources -->
+      <div class="test-card">
+        <h3>
+          <span class="status-indicator" id="test2-status"></span>Multiple
+          Sources
+        </h3>
+        <video controls>
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+            type="video/mp4"
+          />
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.webm"
+            type="video/webm"
+          />
+          <source
+            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mov"
+            type="video/quicktime"
+          />
+        </video>
+        <p><strong>Test:</strong> Video with multiple source elements</p>
+        <p><strong>Expected:</strong> Should prioritize MP4 over WebM</p>
+      </div>
+
+      <!-- Test Case 3: Data Attributes -->
+      <div class="test-card">
+        <h3>
+          <span class="status-indicator" id="test3-status"></span>Data
+          Attributes
+        </h3>
+        <video
+          controls
+          data-src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+          data-video="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+        >
+          Video with data attributes
+        </video>
+        <p><strong>Test:</strong> Video with data-src fallback</p>
+        <p><strong>Expected:</strong> Should detect data-src URL</p>
+      </div>
+
+      <!-- Test Case 4: Dynamic Video -->
+      <div class="test-card">
+        <h3>
+          <span class="status-indicator" id="test4-status"></span>Dynamic Video
+        </h3>
+        <div id="dynamic-video-container">
+          <button onclick="loadDynamicVideo()" class="btn">
+            Load Dynamic Video
+          </button>
+        </div>
+        <p><strong>Test:</strong> Dynamically loaded video content</p>
+        <p><strong>Expected:</strong> Should detect after multiple scans</p>
+      </div>
+    </div>
+
+    <div class="results">
+      <h2>🔍 Test Results</h2>
+      <div id="testResults"></div>
+    </div>
+
+    <script>
+      let testResults = [];
+      let videoCount = 0;
+
+      function log(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const entry = `[${timestamp}] ${message}`;
+
+        testResults.push({ timestamp, message, type });
+
+        const resultsDiv = document.getElementById("testResults");
+        const logEntry = document.createElement("div");
+        logEntry.className = `log-entry ${type}`;
+        logEntry.textContent = entry;
+        resultsDiv.appendChild(logEntry);
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+
+        console.log(`${type.toUpperCase()}: ${message}`);
+      }
+
+      function updateVideoCount(count) {
+        videoCount = count;
+        document.getElementById(
+          "videoCount"
+        ).textContent = `Videos Detected: ${count}`;
+      }
+
+      function updateTestStatus(testId, status) {
+        const indicator = document.getElementById(`${testId}-status`);
+        if (indicator) {
+          indicator.className = `status-indicator ${status}`;
+        }
+      }
+
+      function clearResults() {
+        document.getElementById("testResults").innerHTML = "";
+        testResults = [];
+        updateVideoCount(0);
+
+        // Reset all status indicators
+        for (let i = 1; i <= 4; i++) {
+          updateTestStatus(`test${i}`, "");
+        }
+      }
+
+      function downloadTestResults() {
+        const results = {
+          timestamp: new Date().toISOString(),
+          videoCount: videoCount,
+          logs: testResults,
+          userAgent: navigator.userAgent,
+          chromeExtensionAvailable: typeof chrome !== "undefined",
+        };
+
+        const blob = new Blob([JSON.stringify(results, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `video-detection-test-${new Date()
+          .toISOString()
+          .slice(0, 19)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function loadDynamicVideo() {
+        const container = document.getElementById("dynamic-video-container");
+        container.innerHTML = `
+                <video controls>
+                    <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4" type="video/mp4">
+                    <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.webm" type="video/webm">
+                </video>
+                <p style="color: green; font-weight: bold;">✅ Dynamic video loaded!</p>
+            `;
+        log("Dynamic video content loaded", "success");
+        updateTestStatus("test4", "success");
+
+        // Trigger content script rescan
+        setTimeout(() => {
+          if (window.videoDownloaderContent) {
+            window.videoDownloaderContent.scheduleMultipleScanAttempts();
+          }
+        }, 100);
+      }
+
+      async function testExtensionAPI() {
+        log("🔌 Testing Chrome Extension API...", "info");
+
+        // Test Chrome API availability
+        if (typeof chrome === "undefined") {
+          log("❌ Chrome API not available", "error");
+          return false;
+        }
+        log("✅ Chrome API available", "success");
+
+        // Test runtime API
+        if (!chrome.runtime) {
+          log("❌ Chrome runtime API not available", "error");
+          return false;
+        }
+        log("✅ Chrome runtime API available", "success");
+
+        // Test extension communication
+        return new Promise((resolve) => {
+          chrome.runtime.sendMessage({ action: "ping" }, (response) => {
+            if (chrome.runtime.lastError) {
+              log(
+                `❌ Extension communication failed: ${chrome.runtime.lastError.message}`,
+                "error"
+              );
+              resolve(false);
+            } else {
+              log("✅ Extension communication successful", "success");
+              resolve(true);
+            }
+          });
+        });
+      }
+
+      async function testVideoDetection() {
+        log("🎥 Testing video detection...", "info");
+
+        // Reset test statuses
+        for (let i = 1; i <= 4; i++) {
+          updateTestStatus(`test${i}`, "warning");
+        }
+
+        // Test extension API first
+        const extensionWorking = await testExtensionAPI();
+        if (!extensionWorking) {
+          log(
+            "⚠️ Extension API test failed, cannot test video detection",
+            "warning"
+          );
+          return;
+        }
+
+        // Test content script availability
+        if (typeof VideoDownloaderContent === "undefined") {
+          log("❌ VideoDownloaderContent class not available", "error");
+          return;
+        }
+        log("✅ VideoDownloaderContent class available", "success");
+
+        if (!window.videoDownloaderContent) {
+          log("❌ Content script instance not available", "error");
+          return;
+        }
+        log("✅ Content script instance available", "success");
+
+        // Manual video scan
+        try {
+          log("🔍 Running manual video scan...", "info");
+          const videos = await window.videoDownloaderContent.scanForVideos();
+          log(
+            `📹 Manual scan found ${videos.length} videos`,
+            videos.length > 0 ? "success" : "warning"
+          );
+
+          updateVideoCount(videos.length);
+
+          // Test individual videos
+          const videoElements = document.querySelectorAll("video");
+          log(`🎬 Found ${videoElements.length} video elements in DOM`, "info");
+
+          videoElements.forEach((video, index) => {
+            const videoData = window.videoDownloaderContent.extractVideoData(
+              video,
+              index
+            );
+            const isValid = window.videoDownloaderContent.isValidVideoUrl(
+              videoData.url
+            );
+
+            log(`Video ${index + 1}: ${videoData.title}`, "info");
+            log(`  URL: ${videoData.url}`, "info");
+            log(`  Valid: ${isValid}`, isValid ? "success" : "error");
+
+            // Update test status based on which test card this video belongs to
+            if (index < 4) {
+              updateTestStatus(
+                `test${index + 1}`,
+                isValid ? "success" : "error"
+              );
+            }
+          });
+
+          // Test Chrome extension message
+          chrome.runtime.sendMessage({ action: "scanVideos" }, (response) => {
+            if (chrome.runtime.lastError) {
+              log(
+                `❌ Extension scan failed: ${chrome.runtime.lastError.message}`,
+                "error"
+              );
+            } else {
+              const detectedCount = response?.videos?.length || 0;
+              log(
+                `🎯 Extension detected ${detectedCount} videos`,
+                detectedCount > 0 ? "success" : "warning"
+              );
+              updateVideoCount(Math.max(videoCount, detectedCount));
+
+              if (detectedCount > 0) {
+                log("📋 Detected video details:", "info");
+                response.videos.forEach((video, index) => {
+                  log(`  ${index + 1}. ${video.title} (${video.type})`, "info");
+                  log(`     ${video.url}`, "info");
+                });
+              }
+            }
+          });
+        } catch (error) {
+          log(`❌ Video detection test failed: ${error.message}`, "error");
+        }
+      }
+
+      async function runFullTest() {
+        log("🚀 Starting full test suite...", "info");
+        clearResults();
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await testExtensionAPI();
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await testVideoDetection();
+
+        log("✅ Full test suite completed", "success");
+      }
+
+      // Auto-run basic test when page loads
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          log("🎬 Video detection test page loaded", "info");
+
+          // Auto-run test after a delay to let content script initialize
+          setTimeout(runFullTest, 2000);
+        }, 1000);
+      });
+
+      // Listen for content script updates
+      window.addEventListener("message", (event) => {
+        if (event.data.type === "VIDEO_DETECTION_UPDATE") {
+          const count = event.data.count || 0;
+          log(
+            `🔄 Content script update: ${count} videos detected`,
+            count > 0 ? "success" : "info"
+          );
+          updateVideoCount(count);
+        }
+      });
+    </script>
+  </body>
+</html>

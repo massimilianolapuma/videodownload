@@ -14,13 +14,13 @@ if (typeof VideoDownloaderContent === "undefined") {
         return true; // Keep the message channel open for async responses
       });
 
-      // Auto-scan when page loads
+      // Auto-scan when page loads with multiple attempts
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
-          setTimeout(() => this.autoScanAndStore(), 1000);
+          this.scheduleMultipleScanAttempts();
         });
       } else {
-        setTimeout(() => this.autoScanAndStore(), 1000);
+        this.scheduleMultipleScanAttempts();
       }
 
       // Set up mutation observer to detect dynamically loaded videos
@@ -60,11 +60,38 @@ if (typeof VideoDownloaderContent === "undefined") {
       this.observers.push(observer);
     }
 
+    scheduleMultipleScanAttempts() {
+      // Multiple scan attempts to catch videos that load at different times
+      const scanTimes = [500, 1500, 3000, 5000]; // 0.5s, 1.5s, 3s, 5s
+
+      scanTimes.forEach((delay, index) => {
+        setTimeout(async () => {
+          console.log(`🔄 Auto-scan attempt ${index + 1} at ${delay}ms`);
+          await this.autoScanAndStore();
+        }, delay);
+      });
+    }
+
     async handleMessage(request, sender, sendResponse) {
       try {
         switch (request.action) {
           case "scanVideos": {
+            console.log(
+              "📨 Received scanVideos message - forcing immediate scan"
+            );
             const videos = await this.scanForVideos();
+            sendResponse({ videos });
+            break;
+          }
+
+          case "forceScan": {
+            console.log(
+              "📨 Received forceScan message - clearing cache and rescanning"
+            );
+            this.videos = []; // Clear existing videos
+            const videos = await this.scanForVideos();
+            // Also store the results
+            await this.storeVideosForTab(videos);
             sendResponse({ videos });
             break;
           }
@@ -98,32 +125,69 @@ if (typeof VideoDownloaderContent === "undefined") {
 
     async scanForVideos() {
       this.videos = [];
-      console.log("Starting video scan...");
+      console.log("🚀 Starting comprehensive video scan...");
+      console.log(`📍 Current page: ${window.location.href}`);
+      console.log(`📄 Page title: ${document.title}`);
 
       try {
         // Scan for HTML5 video elements
-        console.log("Scanning for HTML5 video elements...");
+        console.log("\n1️⃣ Scanning for HTML5 video elements...");
         await this.scanVideoElements();
-        console.log(`Found ${this.videos.length} HTML5 videos`);
+        console.log(
+          `✅ HTML5 scan complete: ${this.videos.length} videos found`
+        );
 
         // Scan for embedded videos (YouTube, Vimeo, etc.)
-        console.log("Scanning for embedded videos...");
+        console.log("\n2️⃣ Scanning for embedded videos...");
+        const beforeEmbedded = this.videos.length;
         await this.scanEmbeddedVideos();
-        console.log(`Total after embedded scan: ${this.videos.length} videos`);
+        console.log(
+          `✅ Embedded scan complete: ${
+            this.videos.length - beforeEmbedded
+          } new videos found`
+        );
 
         // Scan for video sources in scripts and attributes
-        console.log("Scanning for video sources in scripts...");
+        console.log("\n3️⃣ Scanning for video sources in scripts...");
+        const beforeScripts = this.videos.length;
         await this.scanVideoSources();
-        console.log(`Total after script scan: ${this.videos.length} videos`);
+        console.log(
+          `✅ Script scan complete: ${
+            this.videos.length - beforeScripts
+          } new videos found`
+        );
 
         // Get detected videos from background script
-        console.log("Getting detected videos from background...");
+        console.log("\n4️⃣ Getting detected videos from background...");
+        const beforeBackground = this.videos.length;
         await this.getDetectedVideos();
-        console.log(`Final total: ${this.videos.length} videos`);
+        console.log(
+          `✅ Background scan complete: ${
+            this.videos.length - beforeBackground
+          } new videos found`
+        );
+
+        console.log(`\n🎯 FINAL SCAN RESULTS:`);
+        console.log(`   Total videos found: ${this.videos.length}`);
+
+        if (this.videos.length > 0) {
+          console.log(`📋 Video summary:`);
+          this.videos.forEach((video, index) => {
+            console.log(`   ${index + 1}. "${video.title}" (${video.type})`);
+            console.log(`      URL: ${video.url}`);
+            console.log(`      Size: ${video.size || "unknown"}`);
+          });
+        } else {
+          console.log(`⚠️ No videos detected. This might indicate:`);
+          console.log(`   - Videos haven't loaded yet`);
+          console.log(`   - URL validation is too strict`);
+          console.log(`   - Video sources are not recognized`);
+          console.log(`   - Page uses dynamic loading`);
+        }
 
         return this.videos;
       } catch (error) {
-        console.error("Error scanning for videos:", error);
+        console.error("❌ Error scanning for videos:", error);
         return this.videos;
       }
     }
@@ -141,13 +205,27 @@ if (typeof VideoDownloaderContent === "undefined") {
         });
 
         const videoData = this.extractVideoData(video, index);
-        console.log(`Extracted video data:`, videoData);
+        console.log(
+          `📊 Extracted video data for element ${index + 1}:`,
+          videoData
+        );
 
         if (videoData.url && this.isValidVideoUrl(videoData.url)) {
           this.videos.push(videoData);
-          console.log(`Added video ${index + 1} to collection`);
+          console.log(
+            `✅ Added video ${index + 1} to collection - Total: ${
+              this.videos.length
+            }`
+          );
         } else {
-          console.log(`Rejected video ${index + 1}: invalid URL or no URL`);
+          console.log(`❌ Rejected video ${index + 1}:`);
+          console.log(`   - Has URL: ${!!videoData.url}`);
+          console.log(`   - URL: ${videoData.url || "none"}`);
+          console.log(
+            `   - Is valid: ${
+              videoData.url ? this.isValidVideoUrl(videoData.url) : "N/A"
+            }`
+          );
         }
       });
     }
@@ -156,20 +234,80 @@ if (typeof VideoDownloaderContent === "undefined") {
       const src = videoElement.src || videoElement.currentSrc;
       const poster = videoElement.poster;
 
+      console.log(`🔍 Extracting video data for element ${index + 1}:`, {
+        src: src,
+        currentSrc: videoElement.currentSrc,
+        readyState: videoElement.readyState,
+        networkState: videoElement.networkState,
+      });
+
       // Try to get video from source elements
       let videoSrc = src;
       if (!videoSrc) {
         const sources = videoElement.querySelectorAll("source");
+        console.log(`📋 Found ${sources.length} source elements`);
         if (sources.length > 0) {
-          // Prefer higher quality sources
-          const sortedSources = Array.from(sources).sort((a, b) => {
-            const aRes = this.extractResolution(a.media || a.type || "");
-            const bRes = this.extractResolution(b.media || b.type || "");
-            return bRes - aRes;
+          // Log all sources
+          sources.forEach((source, sourceIndex) => {
+            console.log(
+              `  Source ${sourceIndex + 1}: ${source.src} (type: ${
+                source.type || "none"
+              })`
+            );
           });
-          videoSrc = sortedSources[0].src;
+
+          // Try to find the best source
+          // First, prefer MP4 sources
+          let bestSource = Array.from(sources).find(
+            (s) => s.type && s.type.includes("mp4") && s.src
+          );
+
+          // If no MP4, try WebM
+          if (!bestSource) {
+            bestSource = Array.from(sources).find(
+              (s) => s.type && s.type.includes("webm") && s.src
+            );
+          }
+
+          // If no specific type, take the first one with a source
+          if (!bestSource) {
+            bestSource = Array.from(sources).find((s) => s.src);
+          }
+
+          // Fallback to first source
+          if (!bestSource && sources.length > 0) {
+            bestSource = sources[0];
+          }
+
+          if (bestSource) {
+            videoSrc = bestSource.src;
+            console.log(
+              `🎯 Selected source: ${videoSrc} (type: ${
+                bestSource.type || "unknown"
+              })`
+            );
+          }
         }
       }
+
+      // Additional fallback: check for video URLs in data attributes
+      if (!videoSrc) {
+        const dataAttrs = ["data-src", "data-video", "data-url", "data-source"];
+        for (const attr of dataAttrs) {
+          const attrValue = videoElement.getAttribute(attr);
+          if (attrValue) {
+            console.log(`🔍 Found video URL in ${attr}: ${attrValue}`);
+            videoSrc = attrValue;
+            break;
+          }
+        }
+      }
+
+      console.log(`📍 Raw video source: ${videoSrc}`);
+      const resolvedUrl = this.resolveUrl(videoSrc);
+      console.log(`🔗 Resolved URL: ${resolvedUrl}`);
+      const isValid = this.isValidVideoUrl(resolvedUrl);
+      console.log(`✅ URL validation result: ${isValid}`);
 
       // Try to determine video title
       let title =
@@ -398,7 +536,27 @@ if (typeof VideoDownloaderContent === "undefined") {
     }
 
     isValidVideoUrl(url) {
-      if (!url) return false;
+      console.log(`🔍 Validating video URL: ${url}`);
+
+      if (!url) {
+        console.log(`❌ URL validation failed: URL is empty or null`);
+        return false;
+      }
+
+      // Convert to string and clean
+      const urlStr = String(url).toLowerCase().trim();
+
+      // Very basic checks first
+      if (urlStr.length < 4) {
+        console.log(`❌ URL validation failed: URL too short`);
+        return false;
+      }
+
+      // Skip data URLs and invalid protocols (but allow blob, http, https)
+      if (urlStr.startsWith("data:") || urlStr.startsWith("javascript:")) {
+        console.log(`❌ URL validation failed: Invalid protocol`);
+        return false;
+      }
 
       const videoExtensions = [
         ".mp4",
@@ -409,26 +567,109 @@ if (typeof VideoDownloaderContent === "undefined") {
         ".flv",
         ".m4v",
         ".3gp",
+        ".ogv",
+        ".ogg",
+        ".wmv",
+        ".divx",
+        ".xvid",
+        ".ts",
+        ".m2ts",
       ];
+
       const videoPatterns = [
-        /\.mp4(\?|$)/i,
-        /\.webm(\?|$)/i,
-        /\.mkv(\?|$)/i,
-        /\.avi(\?|$)/i,
-        /\.mov(\?|$)/i,
-        /\.flv(\?|$)/i,
-        /\.m4v(\?|$)/i,
-        /\.3gp(\?|$)/i,
+        /\.mp4(\?|$|#)/i,
+        /\.webm(\?|$|#)/i,
+        /\.mkv(\?|$|#)/i,
+        /\.avi(\?|$|#)/i,
+        /\.mov(\?|$|#)/i,
+        /\.flv(\?|$|#)/i,
+        /\.m4v(\?|$|#)/i,
+        /\.3gp(\?|$|#)/i,
+        /\.ogv(\?|$|#)/i,
+        /\.ogg(\?|$|#)/i,
+        /\.wmv(\?|$|#)/i,
+        /\.ts(\?|$|#)/i,
+        /\.m2ts(\?|$|#)/i,
         /^blob:/i,
+        /^http[s]?:\/\/.+\.(mp4|webm|mkv|avi|mov|flv|m4v|3gp|ogv|ogg|wmv)/i,
         /youtube\.com/i,
         /youtu\.be/i,
         /vimeo\.com/i,
+        /dailymotion\.com/i,
+        /twitch\.tv/i,
+        /googlevideo\.com/i,
+        /cloudfront\.net.*\.(mp4|webm)/i,
+        /amazonaws\.com.*\.(mp4|webm)/i,
+        /googleapis\.com.*\.(mp4|webm)/i,
+        /storage\.googleapis\.com/i,
+        /commondatastorage\.googleapis\.com/i,
+        /manifest.*\.(m3u8|mpd)/i,
+        /\.m3u8(\?|$|#)/i,
+        /\.mpd(\?|$|#)/i,
       ];
 
-      return (
-        videoPatterns.some((pattern) => pattern.test(url)) ||
-        videoExtensions.some((ext) => url.toLowerCase().includes(ext))
+      // Test patterns first (more specific)
+      for (let i = 0; i < videoPatterns.length; i++) {
+        if (videoPatterns[i].test(urlStr)) {
+          console.log(
+            `✅ URL validation passed: matches pattern ${videoPatterns[i]}`
+          );
+          return true;
+        }
+      }
+
+      // Test extensions (broader check)
+      for (let i = 0; i < videoExtensions.length; i++) {
+        if (urlStr.includes(videoExtensions[i])) {
+          console.log(
+            `✅ URL validation passed: contains extension ${videoExtensions[i]}`
+          );
+          return true;
+        }
+      }
+
+      // Additional heuristic checks for video URLs
+      const videoKeywords = ["video", "stream", "media", "watch", "play"];
+      const hasVideoKeyword = videoKeywords.some((keyword) =>
+        urlStr.includes(keyword)
       );
+
+      if (
+        hasVideoKeyword &&
+        (urlStr.startsWith("http") || urlStr.startsWith("blob:"))
+      ) {
+        console.log(
+          `✅ URL validation passed: contains video keyword and valid protocol`
+        );
+        return true;
+      }
+
+      // If it looks like a valid URL and doesn't have obvious non-video indicators, accept it
+      if (
+        (urlStr.startsWith("http") || urlStr.startsWith("blob:")) &&
+        urlStr.includes("/")
+      ) {
+        // Exclude obvious non-video files
+        const nonVideoPatterns = [
+          /\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|json|xml|txt|pdf|doc)(\?|$|#)/i,
+          /\.(html|htm|php|asp|jsp)(\?|$|#)/i,
+        ];
+
+        const isNonVideo = nonVideoPatterns.some((pattern) =>
+          pattern.test(urlStr)
+        );
+        if (!isNonVideo) {
+          console.log(
+            `✅ URL validation passed: looks like a valid media URL with no exclusion patterns`
+          );
+          return true;
+        }
+      }
+
+      console.log(`❌ URL validation failed: no matching patterns found`);
+      console.log(`📋 URL tested: ${urlStr}`);
+
+      return false;
     }
 
     resolveUrl(url) {
@@ -1207,6 +1448,16 @@ if (typeof VideoDownloaderContent === "undefined") {
           error.message
         );
         return Date.now() % 100000;
+      }
+    }
+
+    async storeVideosForTab(videos) {
+      try {
+        const tabId = await this.getCurrentTabId();
+        await chrome.storage.local.set({ [`videos_${tabId}`]: videos });
+        console.log(`💾 Stored ${videos.length} videos for tab ${tabId}`);
+      } catch (error) {
+        console.error("❌ Failed to store videos:", error);
       }
     }
   }
