@@ -8,12 +8,31 @@ class VideoDownloaderSidePanel {
     this.init();
   }
 
-  init() {
+  async init() {
     console.log("Initializing Video Downloader Side Panel");
     this.bindEvents();
     this.setupMessageListener();
-    this.getCurrentTab();
-    this.loadVideosForCurrentTab();
+
+    // Add a small delay to ensure DOM is fully ready
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Get current tab first, then load videos
+    const tabId = await this.getCurrentTab();
+    if (tabId) {
+      await this.loadVideosForCurrentTab();
+    } else {
+      // Retry after a delay if tab ID not available initially
+      console.log("⏳ Tab ID not available, retrying in 500ms...");
+      setTimeout(async () => {
+        const retryTabId = await this.getCurrentTab();
+        if (retryTabId) {
+          await this.loadVideosForCurrentTab();
+        } else {
+          console.error("❌ Failed to get tab ID after retry");
+          this.updateStatus("error", "Could not access browser tab");
+        }
+      }, 500);
+    }
   }
 
   bindEvents() {
@@ -55,43 +74,77 @@ class VideoDownloaderSidePanel {
 
   async getCurrentTab() {
     try {
+      console.log("Attempting to get current tab...");
       const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       });
-      if (tabs[0]) {
+      console.log("Tab query returned:", tabs);
+
+      if (tabs && tabs.length > 0 && tabs[0]) {
         this.currentTabId = tabs[0].id;
-        console.log("Current tab ID:", this.currentTabId);
+        console.log("✅ Current tab ID set to:", this.currentTabId);
+        return this.currentTabId;
+      } else {
+        console.warn("⚠️ No active tab found in query result");
+        this.currentTabId = null;
+        return null;
       }
     } catch (error) {
-      console.error("Error getting current tab:", error);
+      console.error("❌ Error getting current tab:", error);
+      this.currentTabId = null;
+      return null;
     }
   }
 
   async loadVideosForCurrentTab() {
+    console.log("🔄 Starting loadVideosForCurrentTab...");
+
     if (!this.currentTabId) {
-      await this.getCurrentTab();
+      console.log("No currentTabId, attempting to get current tab...");
+      const tabId = await this.getCurrentTab();
+      if (!tabId) {
+        console.error("❌ Still no tab ID after getCurrentTab()");
+        this.updateStatus("error", "No active tab found");
+        return;
+      }
     }
 
-    if (this.currentTabId) {
-      try {
-        console.log(`Loading videos for tab ${this.currentTabId}`);
-        const result = await chrome.storage.local.get([
-          `videos_${this.currentTabId}`,
-        ]);
-        const videos = result[`videos_${this.currentTabId}`] || [];
-        console.log(`Loaded ${videos.length} videos from storage:`, videos);
+    console.log(`📂 Loading videos for tab ${this.currentTabId}`);
 
-        this.videos = videos;
-        this.renderVideos();
-        this.updateStatus("ready", `${videos.length} videos found`);
-      } catch (error) {
-        console.error("Error loading videos:", error);
-        this.updateStatus("error", "Failed to load videos");
+    try {
+      // Test if chrome.storage is available
+      if (!chrome.storage || !chrome.storage.local) {
+        throw new Error("Chrome storage API not available");
       }
-    } else {
-      console.error("No current tab ID available");
-      this.updateStatus("error", "No active tab found");
+
+      const storageKey = `videos_${this.currentTabId}`;
+      console.log(`🔑 Using storage key: ${storageKey}`);
+
+      const result = await chrome.storage.local.get([storageKey]);
+      console.log("📦 Raw storage result:", result);
+
+      const videos = result[storageKey] || [];
+      console.log(`📹 Found ${videos.length} videos in storage:`, videos);
+
+      this.videos = videos;
+      this.renderVideos();
+
+      const statusMessage =
+        videos.length > 0
+          ? `${videos.length} videos found`
+          : "No videos found - try rescanning";
+      this.updateStatus("ready", statusMessage);
+
+      console.log("✅ loadVideosForCurrentTab completed successfully");
+    } catch (error) {
+      console.error("❌ Error loading videos:", error);
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      });
+      this.updateStatus("error", `Failed to load videos: ${error.message}`);
     }
   }
 
@@ -157,9 +210,22 @@ class VideoDownloaderSidePanel {
   }
 
   renderVideos() {
+    console.log(`🎬 Starting renderVideos with ${this.videos.length} videos`);
+
     const videoList = document.getElementById("videoList");
     const emptyState = document.getElementById("emptyState");
     const videoCount = document.getElementById("videoCount");
+
+    console.log("DOM elements found:", {
+      videoList: !!videoList,
+      emptyState: !!emptyState,
+      videoCount: !!videoCount,
+    });
+
+    if (!videoList || !emptyState || !videoCount) {
+      console.error("❌ Required DOM elements not found!");
+      return;
+    }
 
     // Update video count
     videoCount.textContent = `${this.videos.length} video${
@@ -168,18 +234,28 @@ class VideoDownloaderSidePanel {
     videoCount.style.display = this.videos.length > 0 ? "block" : "none";
 
     if (this.videos.length === 0) {
+      console.log("📭 No videos to render, showing empty state");
       videoList.innerHTML = "";
       emptyState.style.display = "block";
       return;
     }
 
+    console.log("📹 Rendering videos...");
     emptyState.style.display = "none";
     videoList.innerHTML = "";
 
     this.videos.forEach((video, index) => {
-      const videoItem = this.createVideoItem(video, index);
-      videoList.appendChild(videoItem);
+      console.log(`Creating video item ${index + 1}:`, video);
+      try {
+        const videoItem = this.createVideoItem(video, index);
+        videoList.appendChild(videoItem);
+        console.log(`✅ Video item ${index + 1} created and appended`);
+      } catch (error) {
+        console.error(`❌ Error creating video item ${index + 1}:`, error);
+      }
     });
+
+    console.log("✅ renderVideos completed");
   }
 
   createVideoItem(video, index) {
