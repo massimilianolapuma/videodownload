@@ -685,8 +685,9 @@ function showStatusMessage(message, type = "info") {
   const statusDot = document.getElementById("statusDot");
   const statusText = document.getElementById("statusText");
 
-  // Only show the full status message for non-scanning states
-  if (statusElement && type !== "scanning") {
+  // Only show the full status message for error and info states
+  // Hide textbox for scanning and success states - use header indicator only
+  if (statusElement && type !== "scanning" && type !== "success") {
     statusElement.textContent = message;
     statusElement.className = `status show ${type}`;
 
@@ -694,8 +695,8 @@ function showStatusMessage(message, type = "info") {
     setTimeout(() => {
       statusElement.classList.remove("show");
     }, 3000);
-  } else if (statusElement && type === "scanning") {
-    // Hide the status message for scanning - we'll only use the dot
+  } else if (statusElement && (type === "scanning" || type === "success")) {
+    // Hide the status message for scanning and success - we'll only use the header indicator
     statusElement.classList.remove("show");
   }
 
