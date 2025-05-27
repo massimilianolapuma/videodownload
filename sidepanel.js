@@ -1,5 +1,12 @@
 // Video Downloader - Side Panel Script
 
+// Prevent multiple script initializations
+if (window.videoDowloaderSidePanelLoaded) {
+  console.log("Side panel script already loaded, skipping initialization");
+} else {
+  window.videoDowloaderSidePanelLoaded = true;
+}
+
 // Utility functions - Define these at the top of the file
 function sanitizeFilename(filename) {
   // Remove invalid characters and spaces
@@ -243,22 +250,30 @@ function createVideoElement(video, index) {
   const size = video.size ? `~${video.size}` : "";
 
   // Use poster image if available, or fallback
-  const bgStyle = video.poster ?
-    `background-image: url('${video.poster}')` :
-    `background: linear-gradient(135deg, var(--system-purple) 0%, var(--system-blue) 100%)`;
+  const bgStyle = video.poster
+    ? `background-image: url('${video.poster}')`
+    : `background: linear-gradient(135deg, var(--system-purple) 0%, var(--system-blue) 100%)`;
 
   // HTML structure matching desiderata
   div.innerHTML = `
     <div class="video-preview desiderata-preview" style="${bgStyle}">
-      <div class="favicon desiderata-favicon" style="background-image: url('${videoSource.icon}')"></div>
+      <div class="favicon desiderata-favicon" style="background-image: url('${
+        videoSource.icon
+      }')"></div>
     </div>
     <div class="desiderata-main">
       <div class="desiderata-row desiderata-top-row">
-        <span class="desiderata-tag desiderata-format">${videoSource.name || format}</span>
+        <span class="desiderata-tag desiderata-format">${
+          videoSource.name || format
+        }</span>
         <span class="desiderata-tag desiderata-icons">
-          <span class="icon">🎬</span>${video.hasAudio ? '<span class="icon">🎵</span>' : ''}
+          <span class="icon">🎬</span>${
+            video.hasAudio ? '<span class="icon">🎵</span>' : ""
+          }
         </span>
-        <span class="desiderata-title" title="${video.title || `Video ${index + 1}`}">${video.title || `Video ${index + 1}`}</span>
+        <span class="desiderata-title" title="${
+          video.title || `Video ${index + 1}`
+        }">${video.title || `Video ${index + 1}`}</span>
         <span class="desiderata-size">${size}</span>
         <button class="desiderata-close" title="Remove">×</button>
       </div>
@@ -279,20 +294,20 @@ function createVideoElement(video, index) {
   `;
 
   // Hide/close button event
-  div.querySelector('.desiderata-close').onclick = (e) => {
+  div.querySelector(".desiderata-close").onclick = (e) => {
     e.preventDefault();
-    div.style.display = 'none';
+    div.style.display = "none";
     // Optionally update count, etc.
   };
 
   // Download button event
-  div.querySelector('.desiderata-download-btn').onclick = (e) => {
+  div.querySelector(".desiderata-download-btn").onclick = (e) => {
     e.preventDefault();
-    handleDownload(video, div.querySelector('.desiderata-download-btn'));
+    handleDownload(video, div.querySelector(".desiderata-download-btn"));
   };
 
   // Dropdown event (future: show menu)
-  div.querySelector('.desiderata-dropdown-btn').onclick = (e) => {
+  div.querySelector(".desiderata-dropdown-btn").onclick = (e) => {
     e.preventDefault();
     // TODO: Implement dropdown menu for quality/format selection
   };
@@ -827,10 +842,10 @@ async function toggleDebugPanel() {
 }
 
 // Debounced video display update to prevent flashing
-let displayUpdateTimeout;
+window.displayUpdateTimeout = window.displayUpdateTimeout || null;
 function debouncedUpdateVideoDisplay(videos) {
-  clearTimeout(displayUpdateTimeout);
-  displayUpdateTimeout = setTimeout(() => {
+  clearTimeout(window.displayUpdateTimeout);
+  window.displayUpdateTimeout = setTimeout(() => {
     updateVideoDisplay(videos);
   }, 1000); // Wait 1 second before updating to reduce flashing
 }
@@ -879,11 +894,16 @@ function updateVideoDisplay(videos) {
 }
 
 // Download manager functionality
-let downloadManagerInterval;
+window.downloadManagerInterval = window.downloadManagerInterval || null;
 
 function initDownloadManager() {
+  // Clear any existing interval
+  if (window.downloadManagerInterval) {
+    clearInterval(window.downloadManagerInterval);
+  }
+
   // Update download progress every 2 seconds
-  downloadManagerInterval = setInterval(updateDownloadProgress, 2000);
+  window.downloadManagerInterval = setInterval(updateDownloadProgress, 2000);
 
   // Initial load
   updateDownloadProgress();
@@ -895,7 +915,7 @@ async function updateDownloadProgress() {
       action: "getDownloadProgress",
     });
 
-    if response?.downloads) {
+    if (response?.downloads) {
       displayDownloads(response.downloads);
     }
   } catch (error) {
