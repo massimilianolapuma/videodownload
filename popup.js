@@ -622,6 +622,59 @@ class VideoDownloaderPopup {
       status.style.display = "none";
     }, 3000);
   }
+
+  async downloadVideo(video) {
+    try {
+      console.log("Starting download for:", video);
+
+      // Get the active tab
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+
+      if (!tab) {
+        throw new Error("No active tab found");
+      }
+
+      // Send download request to content script
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        action: "downloadVideo",
+        url: video.url,
+        filename: this.sanitizeFilename(video.title || "video") + ".mp4",
+      });
+
+      if (response?.success) {
+        this.showNotification("Download started successfully", "success");
+      } else {
+        throw new Error(response?.error || "Download failed");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      this.showNotification(`Download failed: ${error.message}`, "error");
+    }
+  }
+
+  sanitizeFilename(filename) {
+    // Remove invalid characters
+    return filename
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .replace(/\s+/g, "_")
+      .substring(0, 100);
+  }
+
+  showNotification(message, type = "info") {
+    // Implementation of notification display
+    const notification = document.createElement("div");
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
 }
 
 // Initialize popup when DOM is loaded

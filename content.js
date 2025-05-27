@@ -137,6 +137,46 @@ class VideoDownloaderContent {
           break;
         }
 
+        case "downloadVideo": {
+          console.log("📨 Received downloadVideo message");
+          const { url, filename } = request;
+
+          // Check if it's a blob URL
+          if (url.startsWith("blob:")) {
+            try {
+              // Convert blob URL to base64
+              const base64Data = await blobUrlToBase64(url);
+
+              // Send base64 data to background script
+              await chrome.runtime.sendMessage({
+                action: "downloadBlob",
+                data: base64Data,
+                filename: filename,
+                mimeType: "video/mp4", // You might want to detect the actual MIME type
+              });
+
+              sendResponse({ success: true });
+            } catch (error) {
+              console.error("Failed to convert blob URL:", error);
+              sendResponse({ success: false, error: error.message });
+            }
+          } else {
+            // Regular URL, pass through to background
+            try {
+              await chrome.runtime.sendMessage({
+                action: "download",
+                url: url,
+                filename: filename,
+              });
+              sendResponse({ success: true });
+            } catch (error) {
+              console.error("Failed to send download message:", error);
+              sendResponse({ success: false, error: error.message });
+            }
+          }
+          break;
+        }
+
         default:
           sendResponse({ error: "Unknown action" });
       }
@@ -1519,40 +1559,3 @@ if (!window.videoDownloaderContent) {
     "ℹ️ VideoDownloaderContent already exists, skipping initialization"
   );
 }
-
-// Modify the download handler to convert blob URLs
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "downloadVideo") {
-    const { url, filename } = request;
-
-    // Check if it's a blob URL
-    if (url.startsWith("blob:")) {
-      // Convert blob URL to base64
-      blobUrlToBase64(url)
-        .then((base64Data) => {
-          // Send base64 data to background script
-          chrome.runtime.sendMessage({
-            action: "downloadBlob",
-            data: base64Data,
-            filename: filename,
-            mimeType: "video/mp4", // Adjust based on actual video type
-          });
-          sendResponse({ success: true });
-        })
-        .catch((error) => {
-          console.error("Failed to convert blob URL:", error);
-          sendResponse({ success: false, error: error.message });
-        });
-
-      return true; // Keep message channel open for async response
-    } else {
-      // Regular URL, pass through to background
-      chrome.runtime.sendMessage({
-        action: "download",
-        url: url,
-        filename: filename,
-      });
-      sendResponse({ success: true });
-    }
-  }
-});
