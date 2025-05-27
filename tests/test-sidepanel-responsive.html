@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sidepanel Responsive Test</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f0f0f0;
+      }
+
+      .test-container {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .test-panel {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .test-panel h3 {
+        margin: 0;
+        padding: 10px;
+        background: #333;
+        color: white;
+        font-size: 14px;
+      }
+
+      .panel-300 {
+        width: 300px;
+        height: 600px;
+      }
+      .panel-400 {
+        width: 400px;
+        height: 600px;
+      }
+      .panel-600 {
+        width: 600px;
+        height: 600px;
+      }
+      .panel-800 {
+        width: 800px;
+        height: 600px;
+      }
+
+      iframe {
+        width: 100%;
+        height: calc(100% - 44px);
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sidepanel Responsive Layout Test</h1>
+    <p>
+      This test shows how the sidepanel layout responds to different widths:
+    </p>
+
+    <div class="test-container">
+      <div class="test-panel panel-300">
+        <h3>300px Width</h3>
+        <iframe src="../build/sidepanel.html"></iframe>
+      </div>
+
+      <div class="test-panel panel-400">
+        <h3>400px Width</h3>
+        <iframe src="../build/sidepanel.html"></iframe>
+      </div>
+
+      <div class="test-panel panel-600">
+        <h3>600px Width - Should Center</h3>
+        <iframe src="../build/sidepanel.html"></iframe>
+      </div>
+
+      <div class="test-panel panel-800">
+        <h3>800px Width - Max Width 700px</h3>
+        <iframe src="../build/sidepanel.html"></iframe>
+      </div>
+    </div>
+
+    <div
+      style="
+        margin-top: 40px;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+      "
+    >
+      <h2>Expected Behavior:</h2>
+      <ul>
+        <li>
+          <strong>300px & 400px:</strong> Content fills the width, compact
+          layout
+        </li>
+        <li>
+          <strong>600px:</strong> Content is centered with max-width 600px, more
+          spacing
+        </li>
+        <li>
+          <strong>800px:</strong> Content is centered with max-width 700px,
+          generous spacing
+        </li>
+      </ul>
+
+      <h3>Test Instructions:</h3>
+      <ol>
+        <li>Load this page in a browser</li>
+        <li>Verify each panel shows the sidepanel correctly</li>
+        <li>
+          Check that wider panels center the content instead of left-aligning
+        </li>
+        <li>Ensure all layouts are readable and properly spaced</li>
+      </ol>
+    </div>
+  </body>
+</html>
