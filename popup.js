@@ -532,7 +532,7 @@ class VideoDownloaderPopup {
     status.textContent = message;
     status.className = `status status-${type}`;
     status.classList.remove("hidden");
-
+    
     // Add animation
     status.classList.add("animate");
     setTimeout(() => status.classList.remove("animate"), 500);

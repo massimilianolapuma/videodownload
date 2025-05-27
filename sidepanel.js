@@ -275,17 +275,18 @@ function createVideoElement(video, index) {
     <div class="video-info">
       <div class="video-title">${video.title || `Video ${index + 1}`}</div>
       <div class="video-meta">
-        <span class="badge resolution">${video.quality || "Unknown"}</span>
-        <span class="badge size">${video.size || "Unknown size"}</span>
+        <span class="video-badge">${video.quality || "Unknown"}</span>
+        <span class="video-badge">${video.size || "Unknown size"}</span>
         ${
           video.duration
-            ? `<span class="badge duration">${video.duration}s</span>`
+            ? `<span class="video-badge">${video.duration}s</span>`
             : ""
         }
       </div>
       <div class="video-actions">
-        <button class="btn download-btn" data-video='${JSON.stringify(video)}'>
-          📥 Download
+        <button class="btn btn-success download-btn" data-video='${JSON.stringify(video)}'>
+          <span>📥</span>
+          <span>Download</span>
         </button>
       </div>
       <div class="video-progress" style="display: none;">
@@ -355,23 +356,26 @@ function displayNoVideosMessage() {
 // Display error message with custom text
 function displayErrorMessage(customMessage) {
   const emptyState = document.getElementById("emptyState");
-  const videoList = document.getElementById("videoList");
-  const videoCount = document.getElementById("videoCount");
+  const videoList = document.getElementById("videosList"); // Updated to match HTML
+  const totalVideos = document.getElementById("totalVideos");
 
-  if (videoCount) videoCount.style.display = "none";
+  if (totalVideos) totalVideos.textContent = "0";
   if (videoList) videoList.innerHTML = "";
 
   if (emptyState) {
     emptyState.innerHTML = `
-      <div class="icon">⚠️</div>
-      <h3>Connection Error</h3>
-      <p>${
+      <div class="empty-state-icon">⚠️</div>
+      <div class="empty-state-title">Connection Error</div>
+      <div class="empty-state-description">${
         customMessage ||
         "Failed to load videos. Please refresh the page and try again."
-      }</p>
-      <button class="btn" id="retry-btn">🔄 Retry</button>
+      }</div>
+      <button class="btn" id="retry-btn">
+        <span>🔄</span>
+        <span>Retry</span>
+      </button>
     `;
-    emptyState.style.display = "block";
+    emptyState.style.display = "flex";
   }
 
   showStatusMessage(customMessage || "Error occurred", "error");
@@ -396,23 +400,13 @@ function setupEventListeners() {
     }
   });
 
-  // Rescan button (matches HTML ID: rescanBtn)
-  const rescanBtn = document.getElementById("rescanBtn");
-  if (rescanBtn) {
-    rescanBtn.addEventListener("click", async () => {
-      console.log("Rescan button clicked");
-      showStatusMessage("Rescanning for videos...", "scanning");
+  // Scan button (matches HTML ID: scanBtn)
+  const scanBtn = document.getElementById("scanBtn");
+  if (scanBtn) {
+    scanBtn.addEventListener("click", async () => {
+      console.log("Scan button clicked");
+      showStatusMessage("Scanning for videos...", "scanning");
       await loadVideos();
-    });
-  }
-
-  // Force reload button (matches HTML ID: forceReloadBtn)
-  const forceReloadBtn = document.getElementById("forceReloadBtn");
-  if (forceReloadBtn) {
-    forceReloadBtn.addEventListener("click", async () => {
-      console.log("Force reload button clicked");
-      showStatusMessage("Force scanning...", "scanning");
-      await forceScan();
     });
   }
 
@@ -426,7 +420,25 @@ function setupEventListeners() {
     });
   }
 
-  // Debug button (matches HTML ID: debugBtn)
+  // Legacy button support for older HTML versions
+  const rescanBtn = document.getElementById("rescanBtn");
+  if (rescanBtn) {
+    rescanBtn.addEventListener("click", async () => {
+      console.log("Rescan button clicked");
+      showStatusMessage("Rescanning for videos...", "scanning");
+      await loadVideos();
+    });
+  }
+
+  const forceReloadBtn = document.getElementById("forceReloadBtn");
+  if (forceReloadBtn) {
+    forceReloadBtn.addEventListener("click", async () => {
+      console.log("Force reload button clicked");
+      showStatusMessage("Force scanning...", "scanning");
+      await forceScan();
+    });
+  }
+
   const debugBtn = document.getElementById("debugBtn");
   if (debugBtn) {
     debugBtn.addEventListener("click", async () => {
@@ -690,8 +702,7 @@ function showStatusMessage(message, type = "info") {
   const statusDot = document.getElementById("statusDot");
   const statusText = document.getElementById("statusText");
 
-  // Only show the full status message for error and info states
-  // Hide textbox for scanning and success states - use header indicator only
+  // Show status message if element exists
   if (statusElement && type !== "scanning" && type !== "success") {
     statusElement.textContent = message;
     statusElement.className = `status show ${type}`;
@@ -710,11 +721,15 @@ function showStatusMessage(message, type = "info") {
     if (type === "scanning") {
       statusText.textContent = "Scanning...";
       statusDot.className = "status-dot scanning";
+    } else if (type === "error") {
+      statusText.textContent = message;
+      statusDot.className = "status-dot error";
+    } else if (type === "success") {
+      statusText.textContent = message;
+      statusDot.className = "status-dot success";
     } else {
       statusText.textContent = message;
       statusDot.className = "status-dot";
-      statusDot.style.backgroundColor =
-        type === "error" ? "#dc3545" : "#28a745";
     }
   }
 
@@ -730,21 +745,28 @@ function hideStatusMessage() {
 
 // Clear video list function
 function clearVideoList() {
-  const videoList = document.getElementById("videoList");
-  const videoCount = document.getElementById("videoCount");
+  const videoList = document.getElementById("videosList"); // Updated to match HTML
+  const totalVideos = document.getElementById("totalVideos");
   const emptyState = document.getElementById("emptyState");
 
   if (videoList) {
     videoList.innerHTML = "";
   }
 
-  if (videoCount) {
-    videoCount.style.display = "none";
+  if (totalVideos) {
+    totalVideos.textContent = "0";
   }
 
   if (emptyState) {
-    emptyState.style.display = "block";
+    emptyState.style.display = "flex";
   }
+
+  // Clear stored videos
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]) {
+      chrome.storage.local.remove([`videos_${tabs[0].id}`]);
+    }
+  });
 }
 
 // Debug panel toggle function
@@ -816,8 +838,8 @@ function debouncedUpdateVideoDisplay(videos) {
 
 // Update display functions to match the HTML structure
 function updateVideoDisplay(videos) {
-  const videoList = document.getElementById("videoList");
-  const videoCount = document.getElementById("videoCount");
+  const videoList = document.getElementById("videosList"); // Updated to match HTML
+  const totalVideos = document.getElementById("totalVideos");
   const emptyState = document.getElementById("emptyState");
   const scanningIndicator = document.getElementById("scanningIndicator");
 
@@ -828,11 +850,14 @@ function updateVideoDisplay(videos) {
 
   if (!videoList) return;
 
+  // Update statistics
+  if (totalVideos) {
+    totalVideos.textContent = videos ? videos.length : 0;
+  }
+
   if (videos && videos.length > 0) {
     // Show videos
     if (emptyState) emptyState.style.display = "none";
-    // Keep videoCount hidden since we use statusText in header for video count
-    if (videoCount) videoCount.style.display = "none";
 
     videoList.innerHTML = "";
     videos.forEach((video, index) => {
@@ -847,8 +872,7 @@ function updateVideoDisplay(videos) {
     );
   } else {
     // Show empty state
-    if (emptyState) emptyState.style.display = "block";
-    if (videoCount) videoCount.style.display = "none";
+    if (emptyState) emptyState.style.display = "flex";
     videoList.innerHTML = "";
 
     showStatusMessage("No videos found on this page", "info");
@@ -881,25 +905,49 @@ async function updateDownloadProgress() {
 }
 
 function displayDownloads(downloads) {
-  const downloadManager = document.getElementById("downloadManager");
-  const downloadList = document.getElementById("downloadList");
+  const downloadList = document.getElementById("activeDownloadsList"); // Updated to match HTML
+  const activeDownloads = document.getElementById("activeDownloads");
+  const completedDownloads = document.getElementById("completedDownloads");
 
-  if (!downloadManager || !downloadList) return;
+  if (!downloadList) return;
 
-  const activeDownloads = Object.entries(downloads).filter(
+  const allDownloads = Object.entries(downloads);
+  const activeCount = allDownloads.filter(
+    ([id, download]) =>
+      download.status === "downloading" || download.status === "paused"
+  ).length;
+
+  const completedCount = allDownloads.filter(
+    ([id, download]) => download.status === "completed"
+  ).length;
+
+  // Update statistics
+  if (activeDownloads) {
+    activeDownloads.textContent = activeCount;
+  }
+  if (completedDownloads) {
+    completedDownloads.textContent = completedCount;
+  }
+
+  // Display active downloads
+  const activeDownloadsList = allDownloads.filter(
     ([id, download]) =>
       download.status === "downloading" || download.status === "paused"
   );
 
-  if (activeDownloads.length === 0) {
-    downloadManager.style.display = "none";
+  if (activeDownloadsList.length === 0) {
+    downloadList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📥</div>
+        <div class="empty-state-title">No Active Downloads</div>
+        <div class="empty-state-description">Downloads will appear here when started</div>
+      </div>
+    `;
     return;
   }
 
-  downloadManager.style.display = "block";
   downloadList.innerHTML = "";
-
-  activeDownloads.forEach(([downloadId, download]) => {
+  activeDownloadsList.forEach(([downloadId, download]) => {
     const downloadElement = createDownloadElement(downloadId, download);
     downloadList.appendChild(downloadElement);
   });
@@ -916,36 +964,51 @@ function createDownloadElement(downloadId, download) {
   const status = download.status || "downloading";
 
   let statusText = "";
+  let statusClass = "";
   if (status === "downloading") {
     statusText = `${progress}% • ${speed} • ${downloaded}/${total}`;
+    statusClass = "downloading";
   } else if (status === "paused") {
     statusText = `Paused • ${downloaded}/${total}`;
+    statusClass = "paused";
+  } else if (status === "completed") {
+    statusText = `Completed • ${total}`;
+    statusClass = "completed";
+  } else if (status === "error") {
+    statusText = `Failed • ${downloaded}/${total}`;
+    statusClass = "error";
   }
 
   div.innerHTML = `
-    <div class="download-title">${download.title || "Unknown Video"}</div>
-    <div class="download-progress-container">
-      <div class="download-progress-bar">
-        <div class="download-progress-fill ${
-          status === "completed"
-            ? "completed"
-            : status === "error"
-            ? "error"
-            : ""
-        }" 
-             style="width: ${progress}%"></div>
+    <div class="download-info">
+      <div class="download-title">${download.title || "Unknown Video"}</div>
+      <div class="download-meta">
+        <span class="download-status ${statusClass}">${statusText}</span>
       </div>
     </div>
-    <div class="download-status">
-      <span>${statusText}</span>
-      <div class="download-controls">
-        ${
-          status === "downloading"
-            ? `<button class="download-control-btn pause" onclick="pauseDownload('${downloadId}')">⏸️</button>`
-            : `<button class="download-control-btn resume" onclick="resumeDownload('${downloadId}')">▶️</button>`
-        }
-        <button class="download-control-btn cancel" onclick="cancelDownload('${downloadId}')">❌</button>
+    <div class="download-progress">
+      <div class="progress-bar">
+        <div class="progress-fill ${statusClass}" style="width: ${progress}%"></div>
       </div>
+    </div>
+    <div class="download-actions">
+      ${
+        status === "downloading"
+          ? `<button class="btn btn-secondary" onclick="pauseDownload('${downloadId}')">
+               <span>⏸️</span>
+               <span>Pause</span>
+             </button>`
+          : status === "paused"
+          ? `<button class="btn btn-success" onclick="resumeDownload('${downloadId}')">
+               <span>▶️</span>
+               <span>Resume</span>
+             </button>`
+          : ""
+      }
+      <button class="btn btn-danger" onclick="cancelDownload('${downloadId}')">
+        <span>❌</span>
+        <span>Cancel</span>
+      </button>
     </div>
   `;
 
