@@ -215,12 +215,18 @@ class VideoDownloaderContent {
           } else {
             // Regular URL, pass through to background
             try {
-              await chrome.runtime.sendMessage({
-                action: "download",
-                url: url,
-                filename: filename,
+              console.log(
+                "🔄 Sending regular URL download to background:",
+                url
+              );
+              const response = await chrome.runtime.sendMessage({
+                action: "downloadVideo",
+                video: { url: url, title: filename.replace(/\.[^.]+$/, "") },
               });
-              sendResponse({ success: true });
+              sendResponse({
+                success: true,
+                message: "Download initiated through background script",
+              });
             } catch (error) {
               console.error("Failed to send download message:", error);
               sendResponse({ success: false, error: error.message });

@@ -6,7 +6,11 @@ function sanitizeFilename(filename) {
   return filename
     .replace(/[<>:"/\\|?*]/g, "_")
     .replace(/\s+/g, "_")
-    .substring(0, 100); // Limit length
+    .substri  div.innerHTML = `
+    <div class="video-preview">
+      <img src="${thumbnail}" alt="Video thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+      <div class="play-overlay" style="display: none;">▶</div>
+    </div>` 100); // Limit length
 }
 
 function getExtensionFromUrl(url) {
@@ -98,6 +102,9 @@ async function initSidePanel() {
     // Set up event listeners first
     setupEventListeners();
 
+    // Initialize download manager
+    initDownloadManager();
+
     // Load videos when panel opens
     await loadVideos();
 
@@ -107,10 +114,10 @@ async function initSidePanel() {
       clearTimeout(refreshTimeout);
       refreshTimeout = setTimeout(async () => {
         await loadVideos();
-      }, 2000); // Wait 2 seconds before refreshing
+      }, 5000); // Wait 5 seconds before refreshing
     };
 
-    setInterval(debouncedRefresh, 5000); // Check every 5 seconds but debounce
+    setInterval(debouncedRefresh, 15000); // Check every 15 seconds but debounce
 
     console.log("Side panel initialization complete");
   } catch (error) {
@@ -270,9 +277,9 @@ function createVideoElement(video, index) {
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M8 5v14l11-7z'/%3E%3C/svg%3E";
 
   div.innerHTML = `
-    <div class="video-thumbnail">
+    <div class="video-preview">
       <img src="${thumbnail}" alt="Video thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-      <div class="video-play-icon" style="display: none;">▶</div>
+      <div class="play-overlay" style="display: none;">▶</div>
     </div>
     <div class="video-info">
       <div class="video-title">${video.title || `Video ${index + 1}`}</div>
@@ -758,7 +765,7 @@ function debouncedUpdateVideoDisplay(videos) {
   clearTimeout(displayUpdateTimeout);
   displayUpdateTimeout = setTimeout(() => {
     updateVideoDisplay(videos);
-  }, 300); // Wait 300ms before updating
+  }, 1000); // Wait 1 second before updating to reduce flashing
 }
 
 // Update display functions to match the HTML structure
@@ -804,6 +811,150 @@ function updateVideoDisplay(videos) {
 
     showStatusMessage("No videos found on this page", "info");
   }
+}
+
+// Download manager functionality
+let downloadManagerInterval;
+
+function initDownloadManager() {
+  // Update download progress every 2 seconds
+  downloadManagerInterval = setInterval(updateDownloadProgress, 2000);
+  
+  // Initial load
+  updateDownloadProgress();
+}
+
+async function updateDownloadProgress() {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: "getDownloadProgress"
+    });
+    
+    if (response?.downloads) {
+      displayDownloads(response.downloads);
+    }
+  } catch (error) {
+    console.error("Failed to get download progress:", error);
+  }
+}
+
+function displayDownloads(downloads) {
+  const downloadManager = document.getElementById("downloadManager");
+  const downloadList = document.getElementById("downloadList");
+  
+  if (!downloadManager || !downloadList) return;
+  
+  const activeDownloads = Object.entries(downloads).filter(([id, download]) => 
+    download.status === "downloading" || download.status === "paused"
+  );
+  
+  if (activeDownloads.length === 0) {
+    downloadManager.style.display = "none";
+    return;
+  }
+  
+  downloadManager.style.display = "block";
+  downloadList.innerHTML = "";
+  
+  activeDownloads.forEach(([downloadId, download]) => {
+    const downloadElement = createDownloadElement(downloadId, download);
+    downloadList.appendChild(downloadElement);
+  });
+}
+
+function createDownloadElement(downloadId, download) {
+  const div = document.createElement("div");
+  div.className = "download-item";
+  
+  const progress = Math.round(download.progress || 0);
+  const speed = formatSpeed(download.speed || 0);
+  const downloaded = formatBytes(download.downloaded || 0);
+  const total = formatBytes(download.total || 0);
+  const status = download.status || "downloading";
+  
+  let statusText = "";
+  if (status === "downloading") {
+    statusText = `${progress}% • ${speed} • ${downloaded}/${total}`;
+  } else if (status === "paused") {
+    statusText = `Paused • ${downloaded}/${total}`;
+  }
+  
+  div.innerHTML = `
+    <div class="download-title">${download.title || "Unknown Video"}</div>
+    <div class="download-progress-container">
+      <div class="download-progress-bar">
+        <div class="download-progress-fill ${status === "completed" ? "completed" : (status === "error" ? "error" : "")}" 
+             style="width: ${progress}%"></div>
+      </div>
+    </div>
+    <div class="download-status">
+      <span>${statusText}</span>
+      <div class="download-controls">
+        ${status === "downloading" ? 
+          `<button class="download-control-btn pause" onclick="pauseDownload('${downloadId}')">⏸️</button>` :
+          `<button class="download-control-btn resume" onclick="resumeDownload('${downloadId}')">▶️</button>`
+        }
+        <button class="download-control-btn cancel" onclick="cancelDownload('${downloadId}')">❌</button>
+      </div>
+    </div>
+  `;
+  
+  return div;
+}
+
+async function pauseDownload(downloadId) {
+  try {
+    await chrome.runtime.sendMessage({
+      action: "pauseDownload",
+      downloadId: downloadId
+    });
+    showNotification("Download paused", "info");
+  } catch (error) {
+    console.error("Failed to pause download:", error);
+    showNotification("Failed to pause download", "error");
+  }
+}
+
+async function resumeDownload(downloadId) {
+  try {
+    await chrome.runtime.sendMessage({
+      action: "resumeDownload", 
+      downloadId: downloadId
+    });
+    showNotification("Download resumed", "info");
+  } catch (error) {
+    console.error("Failed to resume download:", error);
+    showNotification("Failed to resume download", "error");
+  }
+}
+
+async function cancelDownload(downloadId) {
+  try {
+    await chrome.runtime.sendMessage({
+      action: "cancelDownload",
+      downloadId: downloadId
+    });
+    showNotification("Download cancelled", "info");
+  } catch (error) {
+    console.error("Failed to cancel download:", error);
+    showNotification("Failed to cancel download", "error");
+  }
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+function formatSpeed(bytesPerSecond) {
+  if (bytesPerSecond === 0) return "0 B/s";
+  const k = 1024;
+  const sizes = ["B/s", "KB/s", "MB/s", "GB/s"];
+  const i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
+  return parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 // Initialize when DOM is ready
