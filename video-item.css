@@ -1,6 +1,31 @@
 /* Video Downloader Extension - Video Item Styles */
 /* Based on the YoutubeFormat reference design */
 
+/* --- Desiderata video item layout --- */
+.video-item.desiderata-layout {
+  display: flex;
+  align-items: stretch;
+  background: var(--background-primary);
+  border-radius: 8px;
+  border: 1px solid var(--separator);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 12px;
+  overflow: hidden;
+  min-height: 64px;
+}
+
+.video-preview.desiderata-preview {
+  width: 96px;
+  min-width: 96px;
+  height: 64px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
 /* Video item container */
 .video-item {
   background: var(--background-primary);
@@ -235,4 +260,170 @@
   background-color: color-mix(in srgb, var(--system-orange) 15%, transparent);
   color: var(--system-orange);
   border-color: color-mix(in srgb, var(--system-orange) 30%, transparent);
+}
+
+.favicon.desiderata-favicon {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  width: 20px;
+  height: 20px;
+  background-size: cover;
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.desiderata-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 12px 8px 12px;
+  min-width: 0;
+}
+
+.desiderata-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.desiderata-top-row {
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.desiderata-bottom-row {
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.desiderata-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 4px;
+  background: #e3eafc;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.desiderata-format {
+  background: #e3eafc;
+  color: #2563eb;
+}
+.desiderata-icons {
+  background: #f3f4f6;
+  color: #444;
+  font-size: 13px;
+  gap: 2px;
+}
+
+.desiderata-title {
+  flex: 1;
+  font-size: 1.1em;
+  font-style: italic;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.5px;
+}
+
+.desiderata-size {
+  color: #888;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.desiderata-close {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 20px;
+  cursor: pointer;
+  margin-left: 8px;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.desiderata-close:hover {
+  background: #f3f4f6;
+  color: #e81123;
+}
+
+.desiderata-dropdown-group {
+  display: flex;
+  align-items: center;
+}
+.desiderata-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 16px 0 0 16px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+  cursor: pointer;
+  outline: none;
+  min-width: 80px;
+  height: 36px;
+}
+.dropdown-format {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.dropdown-quality {
+  background: #e6f4ea;
+  color: #16c60c;
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  margin-left: 4px;
+  font-weight: 600;
+}
+.dropdown-caret {
+  font-size: 12px;
+  color: #888;
+  margin-left: 2px;
+}
+
+.desiderata-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 0 16px 16px 0;
+  padding: 6px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 36px;
+  transition: background 0.15s;
+}
+.desiderata-download-btn:hover {
+  background: #1769aa;
+}
+.download-icon {
+  font-size: 18px;
+}
+.download-label {
+  font-size: 15px;
+  font-weight: 600;
 }

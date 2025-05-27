@@ -232,101 +232,70 @@ function displayVideos(videos) {
 // Create video element with horizontal layout inspired by Video DownloadHelper
 function createVideoElement(video, index) {
   const div = document.createElement("div");
-  div.className = "video-item";
+  div.className = "video-item desiderata-layout";
   div.setAttribute("status", "downloadable");
   div.style.setProperty("--order", index);
 
-  // Get video format and quality
+  // Get video format, quality, and source
   const format = getVideoContainer(video);
   const videoSource = getVideoSource(video.url || "");
   const quality = video.quality || "Unknown";
+  const size = video.size ? `~${video.size}` : "";
 
-  // Use poster image if available, or use background image placeholder
-  const bgStyle = video.poster
-    ? `background-image: url('${video.poster}')`
-    : `background: linear-gradient(135deg, var(--system-purple) 0%, var(--system-blue) 100%)`;
+  // Use poster image if available, or fallback
+  const bgStyle = video.poster ?
+    `background-image: url('${video.poster}')` :
+    `background: linear-gradient(135deg, var(--system-purple) 0%, var(--system-blue) 100%)`;
 
-  // Generate the HTML structure to match desiderata.png design
+  // HTML structure matching desiderata
   div.innerHTML = `
-    <hbox class="video-left" align="start" style="${bgStyle}">
-      <div class="video-favicon" style="background-image: url('${
-        videoSource.icon
-      }')"></div>
-      ${!video.poster ? '<div class="video-placeholder">▶</div>' : ""}
-    </hbox>
-    <vbox class="video-right" flex="1">
-      <hbox class="video-top" align="center">
-        <hbox class="video-tags">
-          <span class="video-tag format-tag">${videoSource.name}</span>
-          <span class="video-tag type-tag" title="Video${
-            video.hasAudio ? " & Audio" : ""
-          }">
-            <span class="icon">🎬</span>${
-              video.hasAudio ? '<span class="icon">🔊</span>' : ""
-            }
-          </span>
-        </hbox>
-        <p class="video-title" flex="1" title="${
-          video.title || `Video ${index + 1}`
-        }">
-          ${video.title || `Video ${index + 1}`}
-        </p>
-        <span class="video-size">${video.size || ""}</span>
-        <button class="btn-hide" title="Hide video">×</button>
-      </hbox>
-      <hbox align="center" pack="end" class="video-bottom" flex="1">
-        <div class="video-format-select">
-          <button class="format-btn">
-            <span class="format-container">${format}</span>
-            <span class="format-quality _${quality.replace(
-              /[^\w]/g,
-              ""
-            )}">${quality}</span>
+    <div class="video-preview desiderata-preview" style="${bgStyle}">
+      <div class="favicon desiderata-favicon" style="background-image: url('${videoSource.icon}')"></div>
+    </div>
+    <div class="desiderata-main">
+      <div class="desiderata-row desiderata-top-row">
+        <span class="desiderata-tag desiderata-format">${videoSource.name || format}</span>
+        <span class="desiderata-tag desiderata-icons">
+          <span class="icon">🎬</span>${video.hasAudio ? '<span class="icon">🎵</span>' : ''}
+        </span>
+        <span class="desiderata-title" title="${video.title || `Video ${index + 1}`}">${video.title || `Video ${index + 1}`}</span>
+        <span class="desiderata-size">${size}</span>
+        <button class="desiderata-close" title="Remove">×</button>
+      </div>
+      <div class="desiderata-row desiderata-bottom-row">
+        <div class="desiderata-dropdown-group">
+          <button class="desiderata-dropdown-btn">
+            <span class="dropdown-format">${format}</span>
+            <span class="dropdown-quality">${quality}</span>
+            <span class="dropdown-caret">▼</span>
           </button>
         </div>
-        <div class="video-actions">
-          <button class="btn btn-download download-btn" data-video='${JSON.stringify(
-            video
-          )}'>
-            <span>📥</span>
-          </button>
-        </div>
-        <div class="video-progress-bar" style="display: none;">
-          <div class="progress-fill"></div>
-        </div>
-      </hbox>
-    </vbox>
+        <button class="desiderata-download-btn">
+          <span class="download-icon">⬇️</span>
+          <span class="download-label">Download</span>
+        </button>
+      </div>
+    </div>
   `;
 
-  // Add event listeners to the buttons
-  const hideBtn = div.querySelector(".btn-hide");
-  if (hideBtn) {
-    hideBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      div.style.display = "none";
-      // Optionally, you could remove this video from the videos array
-      // and update the total count
-      const totalVideos = document.getElementById("totalVideos");
-      if (totalVideos) {
-        const currentTotal = parseInt(totalVideos.textContent);
-        if (!isNaN(currentTotal)) {
-          totalVideos.textContent = Math.max(0, currentTotal - 1);
-        }
-      }
-    });
-  }
+  // Hide/close button event
+  div.querySelector('.desiderata-close').onclick = (e) => {
+    e.preventDefault();
+    div.style.display = 'none';
+    // Optionally update count, etc.
+  };
 
-  // Format selection button
-  const formatBtn = div.querySelector(".format-btn");
-  if (formatBtn) {
-    formatBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      // In the future, we could implement a dropdown menu for format selection
-      // For now, it's just a UI element
-    });
-  }
+  // Download button event
+  div.querySelector('.desiderata-download-btn').onclick = (e) => {
+    e.preventDefault();
+    handleDownload(video, div.querySelector('.desiderata-download-btn'));
+  };
+
+  // Dropdown event (future: show menu)
+  div.querySelector('.desiderata-dropdown-btn').onclick = (e) => {
+    e.preventDefault();
+    // TODO: Implement dropdown menu for quality/format selection
+  };
 
   return div;
 }
@@ -926,7 +895,7 @@ async function updateDownloadProgress() {
       action: "getDownloadProgress",
     });
 
-    if (response?.downloads) {
+    if response?.downloads) {
       displayDownloads(response.downloads);
     }
   } catch (error) {
