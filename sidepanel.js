@@ -40,6 +40,7 @@ function showNotification(message, type = "info") {
   notification.className = `notification notification-${type}`;
   notification.textContent = message;
 
+  // Add to document
   document.body.appendChild(notification);
 
   // Remove notification after 3 seconds

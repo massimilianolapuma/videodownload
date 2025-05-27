@@ -74,6 +74,45 @@
       </div>
     </div>
 
+    <div class="status" id="statusMessage"></div>
+
+    <div class="debug-panel" id="debugPanel">
+      <pre id="debugContent">
+Click Debug button to view storage contents...</pre>
+    </div>
+
+    <div class="video-count hidden" id="videoCount">
+      No videos detected
+    </div>
+
+    <div class="download-manager hidden" id="downloadManager">
+      <h3 class="section-title">📥 Active Downloads</h3>
+      <div class="download-list" id="downloadList"></div>
+    </div>
+
+    <div
+      class="scanning-indicator hidden"
+      id="scanningIndicator"
+    >
+      <div class="spinner"></div>
+      <span>Scanning for videos...</span>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <div class="icon">📹</div>
+      <h3>No Videos Found</h3>
+      <p>
+        Click the extension icon on a webpage with videos to start detecting
+        downloadable content.
+      </p>
+    </div>
+
+    <div class="video-list" id="videoList"></div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
+
     <script src="sidepanel.js"></script>
   </body>
 </html>
@@ -713,19 +752,18 @@ Click Debug button to view storage contents...</pre
       >
     </div>
 
-    <div class="video-count" id="videoCount" style="display: none">
+    <div class="video-count hidden" id="videoCount">
       No videos detected
     </div>
 
-    <div class="download-manager" id="downloadManager" style="display: none">
+    <div class="download-manager hidden" id="downloadManager">
       <h3 class="section-title">📥 Active Downloads</h3>
       <div class="download-list" id="downloadList"></div>
     </div>
 
     <div
-      class="scanning-indicator"
+      class="scanning-indicator hidden"
       id="scanningIndicator"
-      style="display: none"
     >
       <div class="spinner"></div>
       <span>Scanning for videos...</span>

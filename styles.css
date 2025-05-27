@@ -739,7 +739,7 @@ body {
     font-size: var(--text-footnote);
     z-index: 10000;
     transition: opacity var(--transition-medium);
-    max-width: 240px;
+    max-width: 280px;
     word-wrap: break-word;
     box-shadow: var(--shadow-lg);
     font-weight: 500;
@@ -764,6 +764,23 @@ body {
 .notification-info {
     background-color: var(--system-blue);
     color: #ffffff;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.flex {
+    display: flex;
+}
+
+.gap-2 {
+    gap: var(--spacing-md);
+}
+
+.text-center {
+    text-align: center;
 }
 
 /* Responsive adjustments */

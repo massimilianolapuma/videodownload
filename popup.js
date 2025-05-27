@@ -702,7 +702,9 @@ class VideoDownloaderPopup {
     setTimeout(() => {
       notification.style.opacity = "0";
       setTimeout(() => {
-        notification.remove();
+        if (notification.parentNode) {
+          notification.remove();
+        }
       }, 300);
     }, 3000);
   }
