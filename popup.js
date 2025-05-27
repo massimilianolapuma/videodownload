@@ -145,8 +145,13 @@ class VideoDownloaderPopup {
     const videoList = document.getElementById("videoList");
 
     if (!videos || videos.length === 0) {
-      videoList.innerHTML =
-        '<div class="no-videos">Click "Re-scan for Videos" to detect downloadable videos on this page.</div>';
+      videoList.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🎬</div>
+          <div class="empty-state-title">No Videos Found</div>
+          <div class="empty-state-description">Try clicking "Re-scan for Videos" to detect new content on this page.</div>
+        </div>
+      `;
       return;
     }
 
@@ -160,11 +165,11 @@ class VideoDownloaderPopup {
           video.title || "Unknown Video",
           60
         )}</div>
-        <div class="video-info">
-          <span class="video-quality">${video.quality || "Unknown"}</span>
-          <span class="video-size">${video.size || "Unknown size"}</span>
+        <div class="video-meta">
+          <span class="video-badge">${video.quality || "Unknown"}</span>
+          <span class="video-badge">${video.size || "Unknown size"}</span>
         </div>
-        <button class="btn btn-success" data-index="${index}" data-url="${
+        <button class="btn btn-success download-btn" data-index="${index}" data-url="${
           video.url
         }">
           <span>⬇️</span>
@@ -176,7 +181,7 @@ class VideoDownloaderPopup {
       .join("");
 
     // Add download event listeners
-    videoList.querySelectorAll(".btn").forEach((btn) => {
+    videoList.querySelectorAll(".download-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         const index = parseInt(e.currentTarget.dataset.index);
         this.downloadVideo(videos[index], e.currentTarget);
