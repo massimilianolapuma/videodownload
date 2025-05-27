@@ -2,6 +2,39 @@
 
 A Chrome extension for downloading videos from web pages, similar to Video DownloadHelper.
 
+## 📁 Project Structure
+
+```text
+VideoDownloader/
+├── 📄 Core Extension Files
+│   ├── manifest.json          # Extension configuration
+│   ├── background.js          # Service worker
+│   ├── content.js            # Content script for video detection
+│   ├── sidepanel.html        # Side panel UI
+│   ├── sidepanel.js          # Side panel logic
+│   ├── popup.html            # Popup UI
+│   ├── popup.js              # Popup logic
+│   ├── inject.js             # Injected script
+│   └── styles.css            # Shared styles
+│
+├── 🎨 Assets
+│   └── icons/                # Extension icons
+│
+├── 📚 Documentation
+│   └── docs/                 # All markdown documentation
+│       ├── INSTALLATION_GUIDE.md
+│       ├── TESTING_GUIDE.md
+│       ├── TROUBLESHOOTING.md
+│       └── ...
+│
+└── 🧪 Tests & Utilities
+    └── tests/                # All test files and utilities
+        ├── test-extension.sh
+        ├── fix-validation-test.html
+        ├── health-check.js
+        └── ...
+```
+
 ## Features
 
 - 🎥 **Video Detection**: Automatically detects video files on web pages
@@ -12,7 +45,7 @@ A Chrome extension for downloading videos from web pages, similar to Video Downl
   - YouTube and Vimeo embeds
   - Video URLs in scripts and data attributes
   - Network requests for video files
-- 🎨 **Modern UI**: Clean and intuitive popup interface
+- 🎨 **Modern UI**: Clean and intuitive sidepanel interface
 - ⚡ **Performance**: Lightweight background service worker
 
 ## Installation
@@ -24,6 +57,8 @@ A Chrome extension for downloading videos from web pages, similar to Video Downl
 3. Enable "Developer mode" in the top right corner
 4. Click "Load unpacked" and select the extension directory
 5. The Video Downloader extension should now appear in your extensions
+
+For detailed installation instructions, see [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md).
 
 ### Using the Extension
 
@@ -59,19 +94,19 @@ A Chrome extension for downloading videos from web pages, similar to Video Downl
 
 ## Development
 
-### Project Structure
+### Testing
 
-```
-VideoDownloader/
-├── manifest.json          # Extension manifest
-├── popup.html             # Popup interface
-├── popup.js               # Popup functionality
-├── background.js          # Background service worker
-├── content.js             # Content script for page analysis
-├── inject.js              # Injected script for deep page access
-├── icons/                 # Extension icons
-│   └── icon.svg          # SVG icon source
-└── README.md             # This file
+Run the test suite to validate functionality:
+
+```bash
+# Run extension validation
+tests/test-extension.sh
+
+# Run health check
+node tests/health-check.js
+
+# Open test page with sample videos
+open tests/fix-validation-test.html
 ```
 
 ### Building Icons
@@ -91,6 +126,15 @@ convert icons/icon.svg -resize 128x128 icons/icon128.png
 1. Right-click the extension icon and select "Inspect popup" to debug the popup
 2. Go to `chrome://extensions/` and click "Inspect views: service worker" to debug the background script
 3. Use browser developer tools to debug content scripts
+4. See [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) for detailed debugging guide
+
+## Documentation
+
+- 📋 [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) - Complete installation instructions
+- 🧪 [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md) - Testing procedures and validation
+- 🔧 [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- 📊 [`docs/STATUS.md`](docs/STATUS.md) - Current development status
+- 🎯 [`docs/CRITICAL_FIXES_COMPLETE.md`](docs/CRITICAL_FIXES_COMPLETE.md) - Recent bug fixes
 
 ## Limitations
 
@@ -102,6 +146,7 @@ convert icons/icon.svg -resize 128x128 icons/icon128.png
 ## Privacy
 
 This extension:
+
 - Does not collect or transmit any personal data
 - Only analyzes the current webpage when explicitly requested
 - Stores video information locally and temporarily
@@ -118,16 +163,19 @@ Feel free to submit issues and enhancement requests!
 ## Troubleshooting
 
 ### Videos Not Detected
+
 - Try clicking "Scan for Videos" button
 - Refresh the page and try again
 - Some videos may load dynamically - wait for them to start playing
 
 ### Download Fails
+
 - Check if the video URL is still valid
 - Some websites may block direct downloads
 - Try right-clicking the video and using "Save video as..." as an alternative
 
 ### Extension Not Working
+
 - Make sure Developer Mode is enabled in Chrome extensions
 - Check the browser console for error messages
 - Try reloading the extension

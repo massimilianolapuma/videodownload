@@ -105,7 +105,7 @@ if (failed === 0) {
   console.log("\n📖 Next steps:");
   console.log("1. Load the extension in Chrome (chrome://extensions/)");
   console.log("2. Test on various websites");
-  console.log("3. Use test-page.html for controlled testing");
+  console.log("3. Use tests/test-page.html for controlled testing");
 } else {
   console.log("⚠️  Some issues found. Please review the failed checks above.");
   process.exit(1);

@@ -341,7 +341,7 @@ function runValidation() {
     console.log("\n🎉 All validations passed! Extension is ready for testing.");
     console.log("\n📋 Next Steps:");
     console.log("1. Load extension in Chrome (chrome://extensions/)");
-    console.log("2. Test on http://localhost:8080/test-page.html");
+    console.log("2. Test on http://localhost:8080/tests/test-page.html");
     console.log("3. Follow the TESTING_GUIDE.md for comprehensive testing");
     console.log("4. Verify side panel functionality");
     console.log("5. Test large file downloads and focus/unfocus scenarios");
