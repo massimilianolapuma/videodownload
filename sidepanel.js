@@ -6,11 +6,7 @@ function sanitizeFilename(filename) {
   return filename
     .replace(/[<>:"/\\|?*]/g, "_")
     .replace(/\s+/g, "_")
-    .substri  div.innerHTML = `
-    <div class="video-preview">
-      <img src="${thumbnail}" alt="Video thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-      <div class="play-overlay" style="display: none;">▶</div>
-    </div>` 100); // Limit length
+    .substring(0, 100); // Limit length
 }
 
 function getExtensionFromUrl(url) {
@@ -819,7 +815,7 @@ let downloadManagerInterval;
 function initDownloadManager() {
   // Update download progress every 2 seconds
   downloadManagerInterval = setInterval(updateDownloadProgress, 2000);
-  
+
   // Initial load
   updateDownloadProgress();
 }
@@ -827,9 +823,9 @@ function initDownloadManager() {
 async function updateDownloadProgress() {
   try {
     const response = await chrome.runtime.sendMessage({
-      action: "getDownloadProgress"
+      action: "getDownloadProgress",
     });
-    
+
     if (response?.downloads) {
       displayDownloads(response.downloads);
     }
@@ -841,21 +837,22 @@ async function updateDownloadProgress() {
 function displayDownloads(downloads) {
   const downloadManager = document.getElementById("downloadManager");
   const downloadList = document.getElementById("downloadList");
-  
+
   if (!downloadManager || !downloadList) return;
-  
-  const activeDownloads = Object.entries(downloads).filter(([id, download]) => 
-    download.status === "downloading" || download.status === "paused"
+
+  const activeDownloads = Object.entries(downloads).filter(
+    ([id, download]) =>
+      download.status === "downloading" || download.status === "paused"
   );
-  
+
   if (activeDownloads.length === 0) {
     downloadManager.style.display = "none";
     return;
   }
-  
+
   downloadManager.style.display = "block";
   downloadList.innerHTML = "";
-  
+
   activeDownloads.forEach(([downloadId, download]) => {
     const downloadElement = createDownloadElement(downloadId, download);
     downloadList.appendChild(downloadElement);
@@ -865,40 +862,47 @@ function displayDownloads(downloads) {
 function createDownloadElement(downloadId, download) {
   const div = document.createElement("div");
   div.className = "download-item";
-  
+
   const progress = Math.round(download.progress || 0);
   const speed = formatSpeed(download.speed || 0);
   const downloaded = formatBytes(download.downloaded || 0);
   const total = formatBytes(download.total || 0);
   const status = download.status || "downloading";
-  
+
   let statusText = "";
   if (status === "downloading") {
     statusText = `${progress}% • ${speed} • ${downloaded}/${total}`;
   } else if (status === "paused") {
     statusText = `Paused • ${downloaded}/${total}`;
   }
-  
+
   div.innerHTML = `
     <div class="download-title">${download.title || "Unknown Video"}</div>
     <div class="download-progress-container">
       <div class="download-progress-bar">
-        <div class="download-progress-fill ${status === "completed" ? "completed" : (status === "error" ? "error" : "")}" 
+        <div class="download-progress-fill ${
+          status === "completed"
+            ? "completed"
+            : status === "error"
+            ? "error"
+            : ""
+        }" 
              style="width: ${progress}%"></div>
       </div>
     </div>
     <div class="download-status">
       <span>${statusText}</span>
       <div class="download-controls">
-        ${status === "downloading" ? 
-          `<button class="download-control-btn pause" onclick="pauseDownload('${downloadId}')">⏸️</button>` :
-          `<button class="download-control-btn resume" onclick="resumeDownload('${downloadId}')">▶️</button>`
+        ${
+          status === "downloading"
+            ? `<button class="download-control-btn pause" onclick="pauseDownload('${downloadId}')">⏸️</button>`
+            : `<button class="download-control-btn resume" onclick="resumeDownload('${downloadId}')">▶️</button>`
         }
         <button class="download-control-btn cancel" onclick="cancelDownload('${downloadId}')">❌</button>
       </div>
     </div>
   `;
-  
+
   return div;
 }
 
@@ -906,7 +910,7 @@ async function pauseDownload(downloadId) {
   try {
     await chrome.runtime.sendMessage({
       action: "pauseDownload",
-      downloadId: downloadId
+      downloadId: downloadId,
     });
     showNotification("Download paused", "info");
   } catch (error) {
@@ -918,8 +922,8 @@ async function pauseDownload(downloadId) {
 async function resumeDownload(downloadId) {
   try {
     await chrome.runtime.sendMessage({
-      action: "resumeDownload", 
-      downloadId: downloadId
+      action: "resumeDownload",
+      downloadId: downloadId,
     });
     showNotification("Download resumed", "info");
   } catch (error) {
@@ -932,7 +936,7 @@ async function cancelDownload(downloadId) {
   try {
     await chrome.runtime.sendMessage({
       action: "cancelDownload",
-      downloadId: downloadId
+      downloadId: downloadId,
     });
     showNotification("Download cancelled", "info");
   } catch (error) {
@@ -954,7 +958,9 @@ function formatSpeed(bytesPerSecond) {
   const k = 1024;
   const sizes = ["B/s", "KB/s", "MB/s", "GB/s"];
   const i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
-  return parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  return (
+    parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(1)) + " " + sizes[i]
+  );
 }
 
 // Initialize when DOM is ready
