@@ -275,8 +275,13 @@ function createVideoElement(video, index) {
     <div class="video-info">
       <div class="video-title">${video.title || `Video ${index + 1}`}</div>
       <div class="video-meta">
-        <span class="resolution">${video.quality || "Unknown"}</span>
-        <span class="size">${video.size || "Unknown size"}</span>
+        <span class="badge resolution">${video.quality || "Unknown"}</span>
+        <span class="badge size">${video.size || "Unknown size"}</span>
+        ${
+          video.duration
+            ? `<span class="badge duration">${video.duration}s</span>`
+            : ""
+        }
       </div>
       <div class="video-actions">
         <button class="btn download-btn" data-video='${JSON.stringify(video)}'>

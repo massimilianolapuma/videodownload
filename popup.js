@@ -146,7 +146,7 @@ class VideoDownloaderPopup {
 
     if (!videos || videos.length === 0) {
       videoList.innerHTML =
-        '<div class="no-videos">No videos found. Try clicking "Scan for Videos" button.</div>';
+        '<div class="no-videos">Click "Re-scan for Videos" to detect downloadable videos on this page.</div>';
       return;
     }
 
@@ -164,10 +164,11 @@ class VideoDownloaderPopup {
           <span class="video-quality">${video.quality || "Unknown"}</span>
           <span class="video-size">${video.size || "Unknown size"}</span>
         </div>
-        <button class="download-btn" data-index="${index}" data-url="${
+        <button class="btn btn-success" data-index="${index}" data-url="${
           video.url
         }">
-          ⬇️ Download
+          <span>⬇️</span>
+          <span>Download</span>
         </button>
       </div>
     `
@@ -175,10 +176,10 @@ class VideoDownloaderPopup {
       .join("");
 
     // Add download event listeners
-    videoList.querySelectorAll(".download-btn").forEach((btn) => {
+    videoList.querySelectorAll(".btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
-        const index = parseInt(e.target.dataset.index);
-        this.downloadVideo(videos[index], e.target);
+        const index = parseInt(e.currentTarget.dataset.index);
+        this.downloadVideo(videos[index], e.currentTarget);
       });
     });
   }
@@ -529,12 +530,19 @@ class VideoDownloaderPopup {
   showStatus(message, type) {
     const status = document.getElementById("status");
     status.textContent = message;
-    status.className = `status ${type}`;
-    status.style.display = "block";
+    status.className = `status status-${type}`;
+    status.classList.remove("hidden");
 
-    setTimeout(() => {
-      status.style.display = "none";
-    }, 3000);
+    // Add animation
+    status.classList.add("animate");
+    setTimeout(() => status.classList.remove("animate"), 500);
+
+    // Auto-hide after 5 seconds for non-error messages
+    if (type !== "error") {
+      setTimeout(() => {
+        status.classList.add("hidden");
+      }, 5000);
+    }
   }
 
   startProgressMonitor(video) {
@@ -601,26 +609,12 @@ class VideoDownloaderPopup {
 
   // Helper function to show error messages
   showError(message) {
-    const status = document.getElementById("status");
-    status.textContent = message;
-    status.className = `status error`;
-    status.style.display = "block";
-
-    setTimeout(() => {
-      status.style.display = "none";
-    }, 3000);
+    this.showStatus(message, "error");
   }
 
   // Helper function to show success messages
   showSuccess(message) {
-    const status = document.getElementById("status");
-    status.textContent = message;
-    status.className = `status success`;
-    status.style.display = "block";
-
-    setTimeout(() => {
-      status.style.display = "none";
-    }, 3000);
+    this.showStatus(message, "success");
   }
 
   async downloadVideo(video) {

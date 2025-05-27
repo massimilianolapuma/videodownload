@@ -3,173 +3,264 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Video Downloader</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 16px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background-color: #f8f9fa;
-        min-height: 100vh;
-        width: 380px;
-        line-height: 1.4;
-      }
+    <title>Video Downloader - Download Manager</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="side-panel">
+    <!-- Header Section -->
+    <div class="header">
+      <h1>
+        <span>📊</span>
+        <span>Download Manager</span>
+      </h1>
+      <div class="status-info">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Ready</span>
+      </div>
+    </div>
 
-      .header {
+    <!-- Controls Section -->
+    <div class="controls flex gap-2">
+      <button id="scanBtn" class="btn">
+        <span>🔍</span>
+        <span>Scan Page</span>
+      </button>
+      <button id="clearBtn" class="btn btn-secondary">
+        <span>🗑️</span>
+        <span>Clear All</span>
+      </button>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="section">
+      <div class="section-title">Statistics</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="totalVideos">0</div>
+          <div class="stat-label">Videos Found</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="activeDownloads">0</div>
+          <div class="stat-label">Downloading</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="completedDownloads">0</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Downloads Section -->
+    <div class="section">
+      <div class="section-title">Active Downloads</div>
+      <div id="activeDownloadsList" class="downloads-list">
+        <div class="no-videos">No active downloads</div>
+      </div>
+    </div>
+
+    <!-- Available Videos Section -->
+    <div class="section">
+      <div class="section-title">Available Videos</div>
+      <div id="videosList" class="video-list">
+        <div class="no-videos">Click "Scan Page" to find downloadable videos</div>
+      </div>
+    </div>
+
+    <!-- Download History Section -->
+    <div class="section">
+      <div class="section-title">Recent Downloads</div>
+      <div id="downloadHistory" class="downloads-list">
+        <div class="no-videos">No recent downloads</div>
+      </div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
+        color: var(--label-primary);
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid #e9ecef;
-      }
-
-      .header h1 {
-        margin: 0;
-        font-size: 18px;
-        color: #333;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        gap: var(--spacing-sm);
+        letter-spacing: -0.4px;
       }
 
       .status-info {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: #666;
+        gap: var(--spacing-xs);
+        font-size: var(--text-caption1);
+        color: var(--label-secondary);
+        font-weight: 500;
       }
 
       .status-dot {
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background-color: #28a745;
-        animation: pulse 2s infinite;
+        background-color: var(--system-green);
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
 
       .status-dot.scanning {
-        background-color: #ffc107;
+        background-color: var(--system-orange);
       }
 
       .status-dot.error {
-        background-color: #dc3545;
+        background-color: var(--system-red);
         animation: none;
       }
 
       @keyframes pulse {
-        0% {
+        0%,
+        100% {
           opacity: 1;
         }
         50% {
-          opacity: 0.5;
-        }
-        100% {
-          opacity: 1;
+          opacity: 0.6;
         }
       }
 
       .controls {
         display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
       }
 
       .btn {
-        padding: 8px 14px;
+        padding: var(--spacing-sm) var(--spacing-md);
         border: none;
-        border-radius: 6px;
-        background: #007bff;
+        border-radius: var(--radius-sm);
+        background: var(--system-blue);
         color: white;
         cursor: pointer;
-        font-size: 12px;
-        transition: all 0.2s;
-        font-weight: 500;
+        font-size: var(--text-subhead);
+        font-weight: 600;
+        font-family: inherit;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        min-height: 44px; /* Apple's minimum touch target */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
       }
 
       .btn:hover {
-        background: #0056b3;
+        background: var(--system-blue-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+        box-shadow: var(--shadow-sm);
       }
 
       .btn:disabled {
-        background: #6c757d;
+        background: var(--system-gray3);
+        color: var(--label-quaternary);
         cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
       }
 
       .btn.secondary {
-        background: #6c757d;
+        background: var(--fill-tertiary);
+        color: var(--system-blue);
+        border: 0.5px solid var(--separator);
       }
 
       .btn.secondary:hover {
-        background: #5a6268;
+        background: var(--fill-secondary);
+        color: var(--system-blue-hover);
       }
 
       .status {
-        padding: 12px;
-        border-radius: 6px;
-        margin-bottom: 16px;
-        font-size: 14px;
+        padding: var(--spacing-md);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--spacing-md);
+        font-size: var(--text-subhead);
+        font-weight: 500;
         text-align: center;
         display: none;
+        border: 0.5px solid transparent;
       }
 
       .status.show {
         display: block;
+        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
       .status.scanning {
-        background: #e3f2fd;
-        color: #1976d2;
-        border: 1px solid #90caf9;
+        background: color-mix(in srgb, var(--system-blue) 10%, transparent);
+        color: var(--system-blue);
+        border-color: color-mix(in srgb, var(--system-blue) 20%, transparent);
       }
 
       .status.success {
-        background: #e8f5e8;
-        color: #2e7d32;
-        border: 1px solid #a5d6a7;
+        background: color-mix(in srgb, var(--system-green) 10%, transparent);
+        color: var(--system-green);
+        border-color: color-mix(in srgb, var(--system-green) 20%, transparent);
       }
 
       .status.error {
-        background: #ffebee;
-        color: #c62828;
-        border: 1px solid #ef9a9a;
+        background: color-mix(in srgb, var(--system-red) 10%, transparent);
+        color: var(--system-red);
+        border-color: color-mix(in srgb, var(--system-red) 20%, transparent);
       }
 
       .video-count {
-        font-size: 14px;
-        color: #666;
-        margin-bottom: 16px;
-        padding: 8px 12px;
-        background: #e9ecef;
-        border-radius: 6px;
+        font-size: var(--text-subhead);
+        font-weight: 500;
+        color: var(--label-secondary);
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-md);
+        background: var(--background-tertiary);
+        border-radius: var(--radius-md);
         text-align: center;
+        border: 0.5px solid var(--separator);
       }
 
       .video-list {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: var(--spacing-md);
       }
 
       .video-item {
-        background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
+        background: var(--background-primary);
+        border: 0.5px solid var(--separator);
+        border-radius: var(--radius-md);
         overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.2s;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .video-item:hover {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+        border-color: color-mix(
+          in srgb,
+          var(--system-blue) 30%,
+          var(--separator)
+        );
       }
 
       .video-preview {
         width: 100%;
-        height: 80px;
-        background: #000;
+        height: 100px;
+        background: var(--system-gray6);
         position: relative;
         overflow: hidden;
       }
@@ -184,12 +275,16 @@
       .video-preview .placeholder {
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(
+          135deg,
+          var(--system-purple) 0%,
+          var(--system-blue) 100%
+        );
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 48px;
+        font-size: 32px;
       }
 
       .play-overlay {
@@ -197,195 +292,258 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 24px;
-        height: 24px;
-        background: rgba(0, 0, 0, 0.7);
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 12px;
+        font-size: var(--text-body);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .play-overlay:hover {
+        background: rgba(0, 0, 0, 0.9);
+        transform: translate(-50%, -50%) scale(1.1);
       }
 
       .video-info {
-        padding: 12px;
+        padding: var(--spacing-md);
       }
 
       .video-title {
         font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 8px;
-        line-height: 1.3;
+        font-size: var(--text-subhead);
+        color: var(--label-primary);
+        margin-bottom: var(--spacing-sm);
+        line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        letter-spacing: -0.2px;
       }
 
       .video-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
-        font-size: 12px;
-        color: #666;
+        gap: var(--spacing-xs);
+        margin-bottom: var(--spacing-md);
+        font-size: var(--text-caption1);
+      }
+
+      .video-meta .badge {
+        padding: 4px var(--spacing-sm);
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: var(--text-caption2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
 
       .video-meta .resolution {
-        background: #e3f2fd;
-        color: #1976d2;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 500;
+        background: color-mix(in srgb, var(--system-blue) 15%, transparent);
+        color: var(--system-blue);
       }
 
       .video-meta .size {
-        background: #f3e5f5;
-        color: #7b1fa2;
-        padding: 2px 6px;
-        border-radius: 4px;
+        background: color-mix(in srgb, var(--system-purple) 15%, transparent);
+        color: var(--system-purple);
       }
 
       .video-meta .duration {
-        background: #e8f5e8;
-        color: #2e7d32;
-        padding: 2px 6px;
-        border-radius: 4px;
+        background: color-mix(in srgb, var(--system-green) 15%, transparent);
+        color: var(--system-green);
       }
 
       .video-actions {
         display: flex;
-        gap: 8px;
+        gap: var(--spacing-sm);
         align-items: center;
       }
 
       .quality-select {
         flex: 1;
-        padding: 6px 8px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        font-size: 12px;
-        background: white;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 0.5px solid var(--separator);
+        border-radius: var(--radius-sm);
+        font-size: var(--text-subhead);
+        background: var(--background-tertiary);
+        color: var(--label-primary);
+        font-family: inherit;
+        min-height: 44px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .quality-select:focus {
+        outline: none;
+        border-color: var(--system-blue);
+        box-shadow: 0 0 0 3px
+          color-mix(in srgb, var(--system-blue) 20%, transparent);
       }
 
       .download-btn {
-        padding: 6px 12px;
-        background: #28a745;
+        padding: var(--spacing-sm) var(--spacing-md);
+        background: var(--system-green);
         color: white;
         border: none;
-        border-radius: 4px;
+        border-radius: var(--radius-sm);
         cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
-        transition: background 0.2s;
+        font-size: var(--text-subhead);
+        font-weight: 600;
+        font-family: inherit;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-xs);
       }
 
       .download-btn:hover {
-        background: #218838;
+        background: var(--system-green-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .download-btn:active {
+        transform: translateY(0);
+        box-shadow: var(--shadow-sm);
       }
 
       .download-btn:disabled {
-        background: #6c757d;
+        background: var(--system-gray3);
+        color: var(--label-quaternary);
         cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
       }
 
       .progress-container {
-        margin-top: 8px;
+        margin-top: var(--spacing-md);
         display: none;
       }
 
       .progress-container.show {
         display: block;
+        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .progress-bar {
         width: 100%;
         height: 6px;
-        background: #e9ecef;
+        background: var(--system-gray5);
         border-radius: 3px;
         overflow: hidden;
       }
 
       .progress-fill {
         height: 100%;
-        background: #28a745;
-        transition: width 0.3s ease;
+        background: var(--system-green);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         width: 0%;
+        border-radius: 3px;
       }
 
       .progress-text {
-        font-size: 11px;
-        color: #666;
-        margin-top: 4px;
+        font-size: var(--text-caption1);
+        color: var(--label-secondary);
+        margin-top: var(--spacing-xs);
         text-align: center;
+        font-weight: 500;
       }
 
       .empty-state {
         text-align: center;
-        padding: 40px 20px;
-        color: #666;
+        padding: var(--spacing-xxl) var(--spacing-lg);
+        color: var(--label-secondary);
+        animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
       .empty-state .icon {
-        font-size: 48px;
-        margin-bottom: 16px;
-        opacity: 0.5;
+        font-size: 64px;
+        margin-bottom: var(--spacing-lg);
+        opacity: 0.6;
+        filter: grayscale(0.3);
       }
 
       .empty-state h3 {
-        margin: 0 0 8px 0;
-        font-size: 16px;
-        color: #333;
+        margin: 0 0 var(--spacing-sm) 0;
+        font-size: var(--text-title3);
+        color: var(--label-primary);
+        font-weight: 600;
+        letter-spacing: -0.4px;
       }
 
       .empty-state p {
         margin: 0;
-        font-size: 14px;
+        font-size: var(--text-subhead);
         line-height: 1.5;
+        max-width: 280px;
+        margin: 0 auto;
       }
 
       .scanning-indicator {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px;
-        gap: 12px;
-        color: #666;
+        padding: var(--spacing-xl);
+        gap: var(--spacing-md);
+        color: var(--label-secondary);
+        animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .debug-panel {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 12px;
-        margin-bottom: 16px;
-        font-family: monospace;
-        font-size: 11px;
+        background: var(--background-tertiary);
+        border: 0.5px solid var(--separator);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono",
+          monospace;
+        font-size: var(--text-caption1);
         display: none;
         max-height: 200px;
         overflow-y: auto;
+        box-shadow: var(--shadow-sm);
       }
 
       .debug-panel.show {
         display: block;
+        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .debug-panel pre {
         margin: 0;
         white-space: pre-wrap;
         word-break: break-all;
+        color: var(--label-secondary);
+        line-height: 1.5;
       }
 
       .spinner {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #e9ecef;
-        border-top: 2px solid #007bff;
+        width: 24px;
+        height: 24px;
+        border: 2px solid var(--system-gray5);
+        border-top: 2px solid var(--system-blue);
         border-radius: 50%;
-        animation: spin 1s linear infinite;
+        animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       }
 
       @keyframes spin {
@@ -398,118 +556,136 @@
       }
 
       .download-manager {
-        background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        margin-bottom: 16px;
+        background: var(--background-primary);
+        border: 0.5px solid var(--separator);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--spacing-md);
         overflow: hidden;
+        box-shadow: var(--shadow-sm);
       }
 
       .section-title {
         margin: 0;
-        padding: 12px 16px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        font-size: 14px;
+        padding: var(--spacing-md) var(--spacing-md);
+        background: var(--background-secondary);
+        border-bottom: 0.5px solid var(--separator);
+        font-size: var(--text-subhead);
         font-weight: 600;
-        color: #333;
+        color: var(--label-primary);
+        letter-spacing: -0.2px;
       }
 
       .download-list {
-        padding: 8px;
+        padding: var(--spacing-sm);
       }
 
       .download-item {
-        padding: 12px;
-        border: 1px solid #e9ecef;
-        border-radius: 6px;
-        margin-bottom: 8px;
-        background: #fafafa;
+        padding: var(--spacing-md);
+        border: 0.5px solid var(--separator);
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--spacing-sm);
+        background: var(--background-tertiary);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       .download-item:last-child {
         margin-bottom: 0;
       }
 
+      .download-item:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+      }
+
       .download-title {
-        font-weight: 500;
-        font-size: 13px;
-        color: #333;
-        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: var(--text-subhead);
+        color: var(--label-primary);
+        margin-bottom: var(--spacing-xs);
         display: -webkit-box;
         -webkit-line-clamp: 1;
         line-clamp: 1;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        letter-spacing: -0.2px;
       }
 
       .download-progress-container {
-        margin-bottom: 8px;
+        margin-bottom: var(--spacing-sm);
       }
 
       .download-progress-bar {
         width: 100%;
         height: 4px;
-        background: #e9ecef;
+        background: var(--system-gray5);
         border-radius: 2px;
         overflow: hidden;
       }
 
       .download-progress-fill {
         height: 100%;
-        background: #007bff;
-        transition: width 0.3s ease;
+        background: var(--system-blue);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         width: 0%;
+        border-radius: 2px;
       }
 
       .download-progress-fill.completed {
-        background: #28a745;
+        background: var(--system-green);
       }
 
       .download-progress-fill.error {
-        background: #dc3545;
+        background: var(--system-red);
       }
 
       .download-status {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 11px;
-        color: #666;
-        margin-top: 4px;
+        font-size: var(--text-caption1);
+        color: var(--label-secondary);
+        margin-top: var(--spacing-xs);
+        font-weight: 500;
       }
 
       .download-controls {
         display: flex;
-        gap: 4px;
+        gap: var(--spacing-xs);
       }
 
       .download-control-btn {
-        padding: 2px 6px;
+        padding: 4px var(--spacing-sm);
         border: none;
-        border-radius: 3px;
-        background: #6c757d;
+        border-radius: var(--radius-sm);
+        background: var(--system-gray);
         color: white;
         cursor: pointer;
-        font-size: 10px;
-        transition: background 0.2s;
+        font-size: var(--text-caption2);
+        font-weight: 600;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        min-height: 32px;
+        min-width: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .download-control-btn:hover {
-        background: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
       }
 
       .download-control-btn.pause {
-        background: #ffc107;
-        color: #000;
+        background: var(--system-yellow);
+        color: var(--label-primary);
       }
 
       .download-control-btn.resume {
-        background: #28a745;
+        background: var(--system-green);
       }
 
       .download-control-btn.cancel {
-        background: #dc3545;
+        background: var(--system-red);
       }
     </style>
   </head>

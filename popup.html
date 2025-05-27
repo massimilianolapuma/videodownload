@@ -4,158 +4,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Video Downloader</title>
-    <style>
-      body {
-        width: 350px;
-        padding: 16px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: #f8f9fa;
-        margin: 0;
-      }
-
-      .header {
-        text-align: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #e9ecef;
-      }
-
-      .header h2 {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 18px;
-      }
-
-      .video-list {
-        max-height: 400px;
-        overflow-y: auto;
-      }
-
-      .video-item {
-        background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-
-      .video-title {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
-        font-size: 14px;
-        line-height: 1.4;
-      }
-
-      .video-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-
-      .video-quality {
-        background: #e3f2fd;
-        color: #1976d2;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-      }
-
-      .video-size {
-        color: #6c757d;
-        font-size: 12px;
-      }
-
-      .download-btn {
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 8px 16px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
-        width: 100%;
-        transition: background-color 0.2s;
-      }
-
-      .download-btn:hover {
-        background: #218838;
-      }
-
-      .download-btn:disabled {
-        background: #6c757d;
-        cursor: not-allowed;
-      }
-
-      .no-videos {
-        text-align: center;
-        color: #6c757d;
-        padding: 40px 20px;
-        font-style: italic;
-      }
-
-      .refresh-btn {
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 8px 16px;
-        cursor: pointer;
-        font-size: 12px;
-        margin-bottom: 15px;
-        width: 100%;
-      }
-
-      .refresh-btn:hover {
-        background: #0056b3;
-      }
-
-      .status {
-        text-align: center;
-        padding: 10px;
-        border-radius: 4px;
-        margin-bottom: 10px;
-        font-size: 12px;
-      }
-
-      .status.success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-      }
-
-      .status.error {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="header">
       <h2>Video Downloader</h2>
     </div>
 
-    <button id="refreshBtn" class="refresh-btn">🔄 Re-scan for Videos</button>
-
-    <button
-      id="openSidePanelBtn"
-      class="refresh-btn"
-      style="background: #6f42c1; margin-bottom: 10px"
-    >
-      📊 Download Manager
+    <button id="refreshBtn" class="btn">
+      <span>🔄</span>
+      <span>Re-scan for Videos</span>
     </button>
 
-    <div id="status" class="status" style="display: none"></div>
+    <button id="openSidePanelBtn" class="btn btn-secondary">
+      <span>📊</span>
+      <span>Download Manager</span>
+    </button>
+
+    <div id="status" class="status hidden"></div>
 
     <div id="videoList" class="video-list">
       <div class="no-videos">
-        Click "Scan for Videos" to detect downloadable videos on this page.
+        Click "Re-scan for Videos" to detect downloadable videos on this page.
       </div>
     </div>
 

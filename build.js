@@ -54,10 +54,9 @@ const filesToCopy = [
   "inject.js",
   "popup.html",
   "popup.js",
-  "popup.css",
+  "styles.css",
   "sidepanel.html",
   "sidepanel.js",
-  "sidepanel.css",
 ];
 
 // Directories to copy
