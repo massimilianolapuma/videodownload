@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extension Connection Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .status {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-size: 12px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      #log {
+        height: 200px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔧 Extension Connection Test</h1>
+
+    <div class="info">
+      <strong>Instructions:</strong>
+      <ol>
+        <li>Make sure the Video Downloader extension is loaded in Chrome</li>
+        <li>Open Chrome DevTools (F12) and check Console for detailed logs</li>
+        <li>Click "Test Extension Connection" to verify communication</li>
+      </ol>
+    </div>
+
+    <div>
+      <button onclick="testConnection()">🔍 Test Extension Connection</button>
+      <button onclick="clearLog()">🧹 Clear Log</button>
+      <button onclick="checkStorage()">💾 Check Storage</button>
+    </div>
+
+    <div id="status"></div>
+
+    <h3>Console Output:</h3>
+    <pre id="log"></pre>
+
+    <!-- Test video for detection -->
+    <div style="margin-top: 30px">
+      <h3>🎥 Test Video</h3>
+      <video width="400" controls>
+        <source
+          src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4"
+          type="video/mp4"
+        />
+        <source
+          src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMWF2YzFhYWNhYWNhdGFhZgAAADx0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAJAQAAAABAAAAAAAAAAAAAAAAAAAAAAD//v//////////////////AAAAAAAAAAAAAAAB"
+          type="video/mp4"
+        />
+        Your browser does not support the video tag.
+      </video>
+      <p><em>Sample video for testing video detection</em></p>
+    </div>
+
+    <script>
+      function log(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const logElement = document.getElementById("log");
+        const statusElement = document.getElementById("status");
+
+        const logMessage = `[${timestamp}] ${message}`;
+        logElement.textContent += logMessage + "\n";
+        logElement.scrollTop = logElement.scrollHeight;
+
+        console.log(logMessage);
+
+        // Update status
+        statusElement.innerHTML = `<div class="${type}">${message}</div>`;
+      }
+
+      function clearLog() {
+        document.getElementById("log").textContent = "";
+        document.getElementById("status").innerHTML = "";
+      }
+
+      async function testConnection() {
+        log("🚀 Starting extension connection test...", "info");
+
+        try {
+          // Check if content script is loaded
+          if (typeof window.videoDownloaderContent === "undefined") {
+            log("❌ Content script not detected on page", "error");
+            log(
+              "💡 This might be normal - content script may load differently",
+              "info"
+            );
+          } else {
+            log("✅ Content script detected on page", "success");
+          }
+
+          // Test chrome APIs
+          if (typeof chrome !== "undefined" && chrome.runtime) {
+            log("✅ Chrome APIs available", "success");
+
+            // Try to get extension info
+            const manifest = chrome.runtime.getManifest();
+            log(`📋 Extension: ${manifest.name} v${manifest.version}`, "info");
+          } else {
+            log("❌ Chrome APIs not available", "error");
+          }
+
+          log("✅ Connection test completed", "success");
+        } catch (error) {
+          log(`❌ Test failed: ${error.message}`, "error");
+          console.error("Test error:", error);
+        }
+      }
+
+      async function checkStorage() {
+        log("🔍 Checking extension storage...", "info");
+
+        try {
+          if (typeof chrome !== "undefined" && chrome.storage) {
+            const result = await chrome.storage.local.get(null);
+            const keys = Object.keys(result);
+
+            if (keys.length === 0) {
+              log("📦 Storage is empty", "info");
+            } else {
+              log(`📦 Storage contains ${keys.length} items:`, "info");
+              keys.forEach((key) => {
+                if (key.startsWith("videos_")) {
+                  const videos = result[key];
+                  log(
+                    `   ${key}: ${
+                      Array.isArray(videos) ? videos.length : "unknown"
+                    } videos`,
+                    "info"
+                  );
+                } else {
+                  log(`   ${key}: ${typeof result[key]}`, "info");
+                }
+              });
+            }
+          } else {
+            log("❌ Chrome storage API not available", "error");
+          }
+        } catch (error) {
+          log(`❌ Storage check failed: ${error.message}`, "error");
+        }
+      }
+
+      // Auto-run basic checks when page loads
+      window.addEventListener("load", () => {
+        log("🏁 Page loaded, running initial checks...", "info");
+
+        // Check if this is running in an extension context
+        if (window.location.protocol === "file:") {
+          log(
+            "ℹ️ Running from file:// - extension features may be limited",
+            "info"
+          );
+        }
+
+        // Wait a moment for content script to load, then test
+        setTimeout(() => {
+          testConnection();
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>

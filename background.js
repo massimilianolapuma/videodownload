@@ -76,48 +76,60 @@ class VideoDownloaderBackground {
     try {
       console.log(`Triggering video scan for tab ${tabId}`);
 
-      // First, ensure content script is injected and ready
-      try {
-        // Try to ping the content script first
-        await chrome.tabs.sendMessage(tabId, { action: "ping" });
-        console.log("Content script already responsive");
-      } catch (pingError) {
-        console.log("Content script not responsive, injecting...");
+      // Content script should be automatically injected via manifest
+      // Try to connect with retries for better reliability
+      let response;
+      let attempts = 0;
+      const maxAttempts = 5;
+      const retryDelay = 500; // Start with 500ms
 
-        // Inject content script
+      while (attempts < maxAttempts) {
         try {
-          await chrome.scripting.executeScript({
-            target: { tabId: tabId },
-            files: ["content.js"],
-          });
-          console.log("Content script injected successfully");
-
-          // Wait longer for content script to initialize
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        } catch (injectionError) {
+          attempts++;
           console.log(
-            "Content script injection failed:",
-            injectionError.message
+            `Attempt ${attempts}/${maxAttempts}: Pinging content script...`
           );
-          throw new Error(
-            "Failed to inject content script: " + injectionError.message
-          );
+
+          // Test connection with ping
+          await chrome.tabs.sendMessage(tabId, { action: "ping" });
+          console.log("✅ Content script responded to ping");
+
+          // Now request video scan
+          console.log("📡 Requesting video scan from content script...");
+          response = await chrome.tabs.sendMessage(tabId, {
+            action: "scanVideos",
+          });
+
+          console.log("✅ Video scan completed successfully");
+          break; // Success, exit retry loop
+        } catch (error) {
+          console.log(`❌ Attempt ${attempts} failed:`, error.message);
+
+          if (attempts < maxAttempts) {
+            const currentDelay = retryDelay * attempts; // Exponential backoff
+            console.log(`⏳ Waiting ${currentDelay}ms before retry...`);
+            await new Promise((resolve) => setTimeout(resolve, currentDelay));
+          } else {
+            console.error(
+              "❌ All attempts failed. Content script may not be ready."
+            );
+            throw new Error(
+              `Failed to connect to content script after ${maxAttempts} attempts: ${error.message}`
+            );
+          }
         }
       }
 
-      // Send message to content script to scan for videos
-      const response = await chrome.tabs.sendMessage(tabId, {
-        action: "scanVideos",
-      });
-
-      console.log("Video scan response:", response);
+      console.log("📊 Video scan response:", response);
 
       if (response?.videos) {
         // Store videos
         await chrome.storage.local.set({
           [`videos_${tabId}`]: response.videos,
         });
-        console.log(`Stored ${response.videos.length} videos for tab ${tabId}`);
+        console.log(
+          `✅ Stored ${response.videos.length} videos for tab ${tabId}`
+        );
 
         // Notify side panel about the videos update
         this.broadcastMessage({
@@ -128,7 +140,7 @@ class VideoDownloaderBackground {
           },
         });
       } else {
-        console.log("No videos found in scan response");
+        console.log("⚠️ No videos found in scan response");
         // Store empty array to clear any existing videos
         await chrome.storage.local.set({
           [`videos_${tabId}`]: [],
@@ -144,7 +156,7 @@ class VideoDownloaderBackground {
         });
       }
     } catch (error) {
-      console.error("Error triggering video scan:", error);
+      console.error("❌ Error triggering video scan:", error);
       // Store empty array on error
       try {
         await chrome.storage.local.set({
