@@ -1689,10 +1689,7 @@ async function blobUrlToBase64(blobUrl) {
 
           // If we're on YouTube or similar platforms, provide specific guidance
           if (
-            window.location.hostname.includes("youtube.com") ||
-            window.location.hostname.includes("youtu.be") ||
-            window.location.hostname.includes("vimeo.com") ||
-            window.location.hostname.includes("dailymotion.com")
+            ["youtube.com", "www.youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com", "dailymotion.com", "www.dailymotion.com"].includes(window.location.hostname)
           ) {
             throw new Error(
               `Video download blocked by platform security restrictions. This is common on ${window.location.hostname}. Please use dedicated download tools for this platform.`
