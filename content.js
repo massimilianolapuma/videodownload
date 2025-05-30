@@ -153,8 +153,7 @@ class VideoDownloaderContent {
 
             // Special handling for YouTube and similar platforms
             if (
-              window.location.hostname.includes("youtube.com") ||
-              window.location.hostname.includes("youtu.be")
+              ["youtube.com", "youtu.be"].includes(window.location.hostname)
             ) {
               console.log(
                 "🎥 YouTube detected - using alternative download method"
